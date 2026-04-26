@@ -25,6 +25,10 @@ interface Appointment {
   notes: string | null;
   status: "PENDING" | "CONFIRMED" | "CANCELLED";
   psychologist: { name: string | null; email: string };
+  amount: number | null;
+  currency: string | null;
+  paymentStatus: string | null;
+  preferenceId: string | null;
 }
 
 interface DashboardAppointment extends Appointment {
@@ -479,21 +483,64 @@ export default function PatientDashboard({ patient }: Props) {
             </>
           )}
 
-          {section === "payments" && (
-            <>
-              <div className="mb-5 flex items-center justify-between">
-                <h1 className="font-serif text-xl text-[#2D4270]">Pagos</h1>
-              </div>
-              <section className="mb-6 grid gap-4 md:grid-cols-3">
-                <StatCard icon="✓" value="$0" label="Total pagado" detail="Módulo en preparación" tone="bg-[#D0E8D8]" />
-                <StatCard icon="⏳" value="$0" label="Pendiente" detail="Sin pagos pendientes" tone="bg-[#FEF4E6]" />
-                <StatCard icon="✕" value="$0" label="Fallidos" detail="Sin cobros fallidos" tone="bg-[#FDF0EE]" />
-              </section>
-              <div className="rounded-[14px] border border-[#E2E8F0] bg-white">
-                <EmptyState label="La gestión de pagos todavía no está conectada." />
-              </div>
-            </>
-          )}
+          {section === "payments" && (() => {
+            const paid = appointments.filter(a => a.paymentStatus === "approved");
+            const pending = appointments.filter(a => a.paymentStatus === "pending" || (a.amount && !a.paymentStatus));
+            const failed = appointments.filter(a => a.paymentStatus === "rejected" || a.paymentStatus === "cancelled");
+            const totalPaid = paid.reduce((sum, a) => sum + (a.amount ?? 0), 0);
+            const totalPending = pending.reduce((sum, a) => sum + (a.amount ?? 0), 0);
+            const currency = appointments.find(a => a.currency)?.currency ?? "ARS";
+            const withPayment = appointments.filter(a => a.amount);
+
+            return (
+              <>
+                <div className="mb-5 flex items-center justify-between">
+                  <h1 className="font-serif text-xl text-[#2D4270]">Pagos</h1>
+                </div>
+                <section className="mb-6 grid gap-4 md:grid-cols-3">
+                  <StatCard icon="✓" value={`${currency} ${totalPaid.toLocaleString("es-AR")}`} label="Total pagado" detail={`${paid.length} pago${paid.length !== 1 ? "s" : ""} aprobado${paid.length !== 1 ? "s" : ""}`} tone="bg-[#D0E8D8]" />
+                  <StatCard icon="⏳" value={`${currency} ${totalPending.toLocaleString("es-AR")}`} label="Pendiente" detail={`${pending.length} en proceso`} tone="bg-[#FEF4E6]" />
+                  <StatCard icon="✕" value={String(failed.length)} label="Fallidos" detail={`${failed.length} cobro${failed.length !== 1 ? "s" : ""} fallido${failed.length !== 1 ? "s" : ""}`} tone="bg-[#FDF0EE]" />
+                </section>
+                <div className="rounded-[14px] border border-[#E2E8F0] bg-white divide-y divide-[#E2E8F0]">
+                  {withPayment.length === 0 ? (
+                    <EmptyState label="No hay pagos registrados todavía." />
+                  ) : withPayment.map((a) => {
+                    const d = new Date(a.date);
+                    const psLabel = a.psychologist.name || a.psychologist.email;
+                    const psMap: Record<string, { label: string; className: string }> = {
+                      approved: { label: "Pagado", className: "bg-[#D0E8D8] text-[#557C5F]" },
+                      pending: { label: "Pendiente", className: "bg-[#FEF4E6] text-[#C07A20]" },
+                      rejected: { label: "Rechazado", className: "bg-[#FDF0EE] text-[#C0392B]" },
+                      cancelled: { label: "Cancelado", className: "bg-[#FDF0EE] text-[#C0392B]" },
+                    };
+                    const ps = a.paymentStatus ? (psMap[a.paymentStatus] ?? { label: a.paymentStatus, className: "bg-gray-100 text-gray-600" }) : { label: "Sin pagar", className: "bg-gray-100 text-gray-500" };
+                    return (
+                      <div key={a.id} className="flex items-center gap-4 px-5 py-4">
+                        <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-[10px] bg-[#EEF2FA]">
+                          <div className="font-serif text-[22px] leading-none text-[#2D4270]">{d.getDate()}</div>
+                          <div className="text-[9px] font-semibold uppercase tracking-wide text-[#8A96A8]">{d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "")}</div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-[#1C2940]">{psLabel}</div>
+                          <div className="mt-0.5 text-xs text-[#8A96A8]">{d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" })}</div>
+                          <span className={`mt-1.5 inline-block rounded-full px-2.5 py-1 text-[10px] font-semibold ${ps.className}`}>{ps.label}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-[#2D4270] text-sm">{a.currency} {a.amount?.toLocaleString("es-AR")}</div>
+                          {a.preferenceId && !a.paymentStatus && (
+                            <a href={`https://www.mercadopago.com.ar/checkout/v1/redirect?preference-id=${a.preferenceId}`} target="_blank" rel="noopener noreferrer" className="mt-1 block text-[10px] font-semibold text-[#8AACC8] hover:text-[#2D4270]">
+                              Pagar →
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
 
           {section === "profile" && (
             <>

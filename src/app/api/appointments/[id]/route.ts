@@ -43,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        summary: `Sesión — ${updated.patient.name || updated.patient.email}`,
+        summary: `Sesión — ${updated.patient?.name || updated.patient?.email || updated.patientName || "Paciente"}`,
         description: updated.notes ?? "",
         start: { dateTime: start.toISOString(), timeZone: "America/Argentina/Buenos_Aires" },
         end: { dateTime: end.toISOString(), timeZone: "America/Argentina/Buenos_Aires" },

@@ -4,6 +4,7 @@ import WeekCalendar from "@/components/WeekCalendar";
 import PendingAppointments from "@/components/PendingAppointments";
 import { signIn, signOut } from "@/auth";
 import ReviewsPanel from "@/components/ReviewsPanel";
+import ProfileSection from "@/components/ProfileSection";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -186,6 +187,9 @@ export default async function DashboardPage() {
 
           {/* Pending appointment requests */}
           <PendingAppointments />
+
+          {/* Public profile editor */}
+          <ProfileSection />
 
           {/* Reviews */}
           <ReviewsPanel title="Mis calificaciones" />

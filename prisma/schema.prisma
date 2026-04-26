@@ -27,22 +27,53 @@ model User {
   psychologistAppointments Appointment[] @relation("PsychologistAppointments")
   reviewsGiven             Review[]      @relation("PatientReviews")
   reviewsReceived          Review[]      @relation("PsychologistReviews")
+  psychologistProfile      PsychologistProfile?
 }
 
 model Appointment {
   id              String   @id @default(cuid())
-  patientId       String
+  patientId       String?
   psychologistId  String
   date            DateTime
   duration        Int      @default(60)
   notes           String?
   status          String   @default("PENDING")
   calendarEventId String?
+  // anonymous patient fields (public booking via /p/[slug])
+  patientName     String?
+  patientEmail    String?
+  patientPhone    String?
+  // payment fields
+  preferenceId    String?
+  paymentId       String?
+  paymentStatus   String?
+  amount          Float?
+  currency        String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  patient      User @relation("PatientAppointments", fields: [patientId], references: [id])
-  psychologist User @relation("PsychologistAppointments", fields: [psychologistId], references: [id])
+  patient      User? @relation("PatientAppointments", fields: [patientId], references: [id])
+  psychologist User  @relation("PsychologistAppointments", fields: [psychologistId], references: [id])
+}
+
+model PsychologistProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  slug            String   @unique
+  specialty       String?
+  licenseNumber   String?
+  bio             String?
+  consultationFee Float?
+  currency        String   @default("ARS")
+  sessionDuration Int      @default(50)
+  timezone        String   @default("America/Argentina/Buenos_Aires")
+  instagramUrl    String?
+  linkedinUrl     String?
+  websiteUrl      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {

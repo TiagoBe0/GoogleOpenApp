@@ -14,64 +14,66 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
+  role          String    @default("PATIENT")
+  psychologistId String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts            Account[]
-  sessions            Session[]
-  psychologistProfile PsychologistProfile?
-  appointments        Appointment[]
+  accounts      Account[]
+  sessions      Session[]
+  patients      User[]        @relation("PatientPsychologist")
+  psychologist  User?         @relation("PatientPsychologist", fields: [psychologistId], references: [id])
+  patientAppointments      Appointment[] @relation("PatientAppointments")
+  psychologistAppointments Appointment[] @relation("PsychologistAppointments")
+  reviewsGiven             Review[]      @relation("PatientReviews")
+  reviewsReceived          Review[]      @relation("PsychologistReviews")
+  psychologistProfile      PsychologistProfile?
 }
 
-model PsychologistProfile {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  slug               String?  @unique
-  specialty          String?
-  licenseNumber      String?
-  bio                String?
-  phone              String?
-  address            String?
-  city               String?
-  country            String?  @default("Argentina")
-  yearsOfExperience  Int?
-  consultationFee    Float?
-  currency           String?  @default("ARS")
-  languages          String?
-  website            String?
-  instagram          String?
-  linkedin           String?
-  sessionDuration    Int?     @default(50)
-  modalityOnline     Boolean  @default(false)
-  modalityPresential Boolean  @default(true)
-  acceptsNewPatients Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// status: pending_payment | confirmed | cancelled | completed
-// paymentStatus: pending | approved | rejected | in_process
 model Appointment {
   id              String   @id @default(cuid())
+  patientId       String?
   psychologistId  String
-  patientName     String
-  patientEmail    String
-  patientPhone    String?
-  scheduledAt     DateTime
-  durationMinutes Int      @default(50)
-  status          String   @default("pending_payment")
-  paymentStatus   String   @default("pending")
-  paymentId       String?
-  preferenceId    String?
-  amount          Float
-  currency        String   @default("ARS")
+  date            DateTime
+  duration        Int      @default(60)
   notes           String?
+  status          String   @default("PENDING")
+  calendarEventId String?
+  // anonymous patient fields (public booking via /p/[slug])
+  patientName     String?
+  patientEmail    String?
+  patientPhone    String?
+  // payment fields
+  preferenceId    String?
+  paymentId       String?
+  paymentStatus   String?
+  amount          Float?
+  currency        String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  psychologist User @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+  patient      User? @relation("PatientAppointments", fields: [patientId], references: [id])
+  psychologist User  @relation("PsychologistAppointments", fields: [psychologistId], references: [id])
+}
+
+model PsychologistProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  slug            String   @unique
+  specialty       String?
+  licenseNumber   String?
+  bio             String?
+  consultationFee Float?
+  currency        String   @default("ARS")
+  sessionDuration Int      @default(50)
+  timezone        String   @default("America/Argentina/Buenos_Aires")
+  instagramUrl    String?
+  linkedinUrl     String?
+  websiteUrl      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -108,4 +110,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Review {
+  id             String   @id @default(cuid())
+  rating         Int
+  comment        String?
+  patientId      String
+  psychologistId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patient      User @relation("PatientReviews", fields: [patientId], references: [id], onDelete: Cascade)
+  psychologist User @relation("PsychologistReviews", fields: [psychologistId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, psychologistId])
+  @@index([psychologistId])
 }

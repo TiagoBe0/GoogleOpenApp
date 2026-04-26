@@ -16,13 +16,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           scope: [
             "openid",
             "email",
             "profile",
-            "https://www.googleapis.com/auth/calendar.readonly",
+            "https://www.googleapis.com/auth/calendar.events",
           ].join(" "),
           access_type: "offline",
           prompt: "consent",
@@ -51,11 +52,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!valid) return null;
 
-        return { id: user.id, email: user.email, name: user.name, image: user.image };
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role };
       },
     }),
   ],
   callbacks: {
+    async signIn({ account, profile }) {
+      if (account?.provider === "google") {
+        const googleProfile = profile as { email_verified?: boolean } | undefined;
+        return googleProfile?.email_verified === true;
+      }
+
+      return true;
+    },
     async jwt({ token, account, user }) {
       if (account && account.provider === "google") {
         token.googleAccessToken = account.access_token;
@@ -63,12 +72,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       if (user) {
         token.id = user.id;
+        token.role = (user as { role?: string }).role;
+      }
+      if (token.id && !token.role) {
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
+        token.role = dbUser?.role ?? "PATIENT";
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
+        session.user.role = token.role as string;
         session.googleAccessToken = token.googleAccessToken as string | undefined;
       }
       return session;

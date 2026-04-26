@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GoogleButton from "@/components/GoogleButton";
@@ -9,11 +9,23 @@ import { Suspense } from "react";
 
 function LoginForm() {
   const router = useRouter();
+  const { update } = useSession();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") ?? undefined;
+  const authError = searchParams.get("error");
 
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    if (authError === "OAuthAccountNotLinked") {
+      return "Este email ya existe. Ahora podés volver a intentar entrar con Google para vincularlo.";
+    }
+
+    if (authError) {
+      return "No se pudo iniciar sesión con Google. Intenta nuevamente.";
+    }
+
+    return "";
+  });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,7 +43,9 @@ function LoginForm() {
         redirect: false,
       });
       if (result?.ok) {
-        router.push(callbackUrl);
+        const session = await update();
+        const role = session?.user?.role;
+        router.push(callbackUrl ?? (role === "PSYCHOLOGIST" ? "/dashboard" : "/patient"));
       } else {
         setError("Email o contraseña incorrectos");
       }

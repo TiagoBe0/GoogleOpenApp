@@ -1,39 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { MercadoPagoConfig, Payment } from "mercadopago";
 import { createHmac } from "crypto";
-
-const mp = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN! });
-const paymentClient = new Payment(mp);
 
 function verifySignature(req: NextRequest, rawBody: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
-  // If no secret is configured, skip verification (dev mode)
-  if (!secret) return true;
+  if (!secret) return true; // skip in dev when not configured
 
-  // MercadoPago sends: x-signature: ts=<timestamp>,v1=<hash>
   const signatureHeader = req.headers.get("x-signature");
-  const requestId = req.headers.get("x-request-id") ?? "";
+  const requestId = req.headers.get("x-request-id");
   if (!signatureHeader) return false;
 
   const parts = Object.fromEntries(
-    signatureHeader.split(",").map((p) => p.split("=") as [string, string])
+    signatureHeader.split(",").map((p) => p.trim().split("=") as [string, string])
   );
   const ts = parts["ts"];
   const v1 = parts["v1"];
   if (!ts || !v1) return false;
 
-  // MP signs: "id:<data.id>;request-id:<x-request-id>;ts:<ts>;"
-  // We extract data.id from the body for the manifest
-  let dataId = "";
-  try {
-    const body = JSON.parse(rawBody);
-    dataId = String(body?.data?.id ?? "");
-  } catch {
-    return false;
-  }
-
-  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const dataId = new URL(req.url).searchParams.get("data.id") ?? "";
+  const manifest = `id:${dataId};request-id:${requestId ?? ""};ts:${ts};`;
   const expected = createHmac("sha256", secret).update(manifest).digest("hex");
 
   return expected === v1;
@@ -46,46 +31,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
   }
 
-  let body: { type?: string; data?: { id?: unknown } } | null = null;
+  let payload: { type?: string; data?: { id?: string } };
   try {
-    body = JSON.parse(rawBody);
+    payload = JSON.parse(rawBody);
   } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  if (payload.type !== "payment" || !payload.data?.id) {
     return NextResponse.json({ ok: true });
   }
 
-  if (!body) return NextResponse.json({ ok: true });
+  const paymentId = String(payload.data.id);
 
-  const { type, data } = body;
+  // Fetch real payment data from MP
+  const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+    headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+  });
 
-  if (type !== "payment" || !data?.id) {
-    return NextResponse.json({ ok: true });
+  if (!mpRes.ok) {
+    return NextResponse.json({ error: "Error al obtener pago" }, { status: 502 });
   }
 
-  let payment;
-  try {
-    payment = await paymentClient.get({ id: String(data.id) });
-  } catch {
-    // Payment not found or MP API error — return 200 so MP doesn't retry forever
-    return NextResponse.json({ ok: true });
-  }
-
-  const appointmentId = payment.external_reference;
-  const status = payment.status;
-  const paymentId = String(payment.id);
+  const payment = await mpRes.json();
+  const appointmentId: string = payment.external_reference;
+  const mpStatus: string = payment.status;
 
   if (!appointmentId) return NextResponse.json({ ok: true });
 
-  const appointmentStatus =
-    status === "approved" ? "confirmed"
-    : status === "rejected" ? "cancelled"
-    : "pending_payment";
+  const statusMap: Record<string, string> = {
+    approved: "CONFIRMED",
+    rejected: "CANCELLED",
+    cancelled: "CANCELLED",
+  };
 
-  await prisma.appointment.updateMany({
+  const newStatus = statusMap[mpStatus];
+
+  await prisma.appointment.update({
     where: { id: appointmentId },
     data: {
-      paymentStatus: status ?? "pending",
       paymentId,
-      status: appointmentStatus,
+      paymentStatus: mpStatus,
+      ...(newStatus ? { status: newStatus } : {}),
     },
   });
 

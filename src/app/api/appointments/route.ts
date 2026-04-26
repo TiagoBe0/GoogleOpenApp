@@ -1,141 +1,147 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 
-const mp = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN! });
-const preference = new Preference(mp);
+export async function GET() {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  const isPatient = session.user.role === "PATIENT";
+
+  const appointments = await prisma.appointment.findMany({
+    where: isPatient
+      ? { patientId: session.user.id }
+      : { psychologistId: session.user.id },
+    include: {
+      patient: { select: { id: true, name: true, email: true, image: true } },
+      psychologist: { select: { id: true, name: true, email: true } },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  return NextResponse.json(appointments);
+}
 
 export async function POST(req: NextRequest) {
-  const { psychologistId, patientName, patientEmail, patientPhone, scheduledAt, notes } =
-    await req.json();
+  const body = await req.json();
+  const { date, duration, notes, psychologistId, patientName, patientEmail, patientPhone } = body;
 
-  if (!psychologistId || !patientName || !patientEmail || !scheduledAt) {
-    return NextResponse.json({ error: "Faltan datos obligatorios" }, { status: 400 });
+  if (!date) return NextResponse.json({ error: "La fecha es requerida" }, { status: 400 });
+
+  const session = await auth();
+  const isRegistered = !!session && session.user.role === "PATIENT";
+
+  // Anonymous bookings require contact data and explicit psychologistId
+  if (!isRegistered && (!patientName || !patientEmail || !psychologistId)) {
+    return NextResponse.json({ error: "Nombre, email y psicólogo son requeridos" }, { status: 400 });
   }
 
-  const [psy, profile] = await Promise.all([
-    prisma.user.findUnique({ where: { id: psychologistId }, select: { name: true } }),
-    prisma.psychologistProfile.findUnique({
-      where: { userId: psychologistId },
-      select: { consultationFee: true, currency: true, sessionDuration: true, acceptsNewPatients: true },
-    }),
-  ]);
+  // Registered patient: derive psychologistId from their linked psychologist
+  let resolvedPsychologistId = psychologistId;
+  if (isRegistered && !resolvedPsychologistId) {
+    const patient = await prisma.user.findUnique({
+      where: { id: session!.user.id },
+      select: { psychologistId: true },
+    });
+    if (!patient?.psychologistId) {
+      return NextResponse.json({ error: "No tenés un psicólogo asignado todavía" }, { status: 400 });
+    }
+    resolvedPsychologistId = patient.psychologistId;
+  }
 
-  if (!psy || !profile) {
+  const psychologist = await prisma.user.findUnique({
+    where: { id: resolvedPsychologistId },
+    include: { psychologistProfile: true },
+  });
+
+  if (!psychologist || psychologist.role !== "PSYCHOLOGIST") {
     return NextResponse.json({ error: "Psicólogo no encontrado" }, { status: 404 });
   }
 
-  if (!profile.acceptsNewPatients) {
-    return NextResponse.json({ error: "El profesional no acepta nuevos pacientes" }, { status: 409 });
-  }
+  // Conflict check
+  const appointmentDate = new Date(date);
+  const durationMin = duration ?? psychologist.psychologistProfile?.sessionDuration ?? 50;
+  const endDate = new Date(appointmentDate.getTime() + durationMin * 60 * 1000);
 
-  const fee = profile.consultationFee ?? 0;
-  const currency = profile.currency ?? "ARS";
-  const duration = profile.sessionDuration ?? 50;
-
-  // Verify slot is still free
-  const slotDate = new Date(scheduledAt);
   const conflict = await prisma.appointment.findFirst({
     where: {
-      psychologistId,
-      scheduledAt: slotDate,
-      status: { in: ["pending_payment", "confirmed"] },
+      psychologistId: resolvedPsychologistId,
+      status: { not: "CANCELLED" },
+      AND: [
+        { date: { lt: endDate } },
+        { date: { gte: new Date(appointmentDate.getTime() - durationMin * 60 * 1000) } },
+      ],
     },
   });
 
   if (conflict) {
-    return NextResponse.json({ error: "Este horario ya no está disponible" }, { status: 409 });
+    return NextResponse.json({ error: "El horario no está disponible" }, { status: 409 });
   }
 
-  // Create appointment in pending_payment state
   const appointment = await prisma.appointment.create({
     data: {
-      psychologistId,
-      patientName,
-      patientEmail,
-      patientPhone: patientPhone ?? null,
-      scheduledAt: slotDate,
-      durationMinutes: duration,
-      amount: fee,
-      currency,
+      psychologistId: resolvedPsychologistId,
+      date: appointmentDate,
+      duration: durationMin,
       notes: notes ?? null,
-      status: "pending_payment",
-      paymentStatus: "pending",
+      status: "PENDING",
+      ...(isRegistered
+        ? { patientId: session!.user.id }
+        : { patientName, patientEmail, patientPhone: patientPhone ?? null }),
     },
   });
 
-  // Create MercadoPago preference — clean up appointment if MP fails
+  // MercadoPago preference
+  const fee = psychologist.psychologistProfile?.consultationFee;
+  const currency = psychologist.psychologistProfile?.currency ?? "ARS";
+
+  if (!fee || !process.env.MP_ACCESS_TOKEN) {
+    return NextResponse.json({ appointment }, { status: 201 });
+  }
+
+  const mpClient = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+  const preferenceClient = new Preference(mpClient);
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  let pref;
+
   try {
-    pref = await preference.create({
+    const preference = await preferenceClient.create({
       body: {
         items: [
           {
             id: appointment.id,
-            title: `Consulta psicológica — ${psy.name}`,
-            description: `Sesión el ${slotDate.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })} a las ${slotDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`,
+            title: `Consulta psicológica — ${psychologist.name || psychologist.email}`,
+            description: `Turno el ${appointmentDate.toLocaleDateString("es-AR")} a las ${appointmentDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`,
             quantity: 1,
             unit_price: fee,
             currency_id: currency,
           },
         ],
-        payer: { name: patientName, email: patientEmail },
-        external_reference: appointment.id,
+        payer: isRegistered
+          ? { name: session!.user.name ?? undefined, email: session!.user.email ?? undefined }
+          : { name: patientName, email: patientEmail },
         back_urls: {
-          success: `${baseUrl}/payments/success`,
-          failure: `${baseUrl}/payments/failure`,
-          pending: `${baseUrl}/payments/pending`,
+          success: `${baseUrl}/payments/success?appointment=${appointment.id}`,
+          failure: `${baseUrl}/payments/failure?appointment=${appointment.id}`,
+          pending: `${baseUrl}/payments/pending?appointment=${appointment.id}`,
         },
         auto_return: "approved",
+        external_reference: appointment.id,
         notification_url: `${baseUrl}/api/payments/webhook`,
-        statement_descriptor: "PsicoApp",
       },
     });
-  } catch (mpError) {
-    // Delete orphan appointment so the slot stays free
-    await prisma.appointment.delete({ where: { id: appointment.id } });
-    console.error("MercadoPago preference creation failed:", mpError);
+
+    await prisma.appointment.update({
+      where: { id: appointment.id },
+      data: { preferenceId: preference.id, amount: fee, currency },
+    });
+
     return NextResponse.json(
-      { error: "No se pudo conectar con MercadoPago. Intentá de nuevo." },
-      { status: 502 }
+      { appointment, checkoutUrl: preference.init_point, sandboxUrl: preference.sandbox_init_point },
+      { status: 201 }
     );
-  }
-
-  if (!pref.init_point) {
+  } catch {
     await prisma.appointment.delete({ where: { id: appointment.id } });
-    return NextResponse.json({ error: "MercadoPago no devolvió URL de pago." }, { status: 502 });
+    return NextResponse.json({ error: "Error al crear el link de pago" }, { status: 500 });
   }
-
-  await prisma.appointment.update({
-    where: { id: appointment.id },
-    data: { preferenceId: pref.id },
-  });
-
-  return NextResponse.json({
-    appointmentId: appointment.id,
-    checkoutUrl: pref.init_point,
-    sandboxUrl: pref.sandbox_init_point ?? pref.init_point,
-  });
-}
-
-export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-
-  const { searchParams } = new URL(req.url);
-  const psychologistId = searchParams.get("psychologistId");
-
-  // Only allow fetching your own appointments
-  if (!psychologistId || psychologistId !== session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
-
-  const appointments = await prisma.appointment.findMany({
-    where: { psychologistId },
-    orderBy: { scheduledAt: "asc" },
-  });
-
-  return NextResponse.json({ appointments });
 }

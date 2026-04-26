@@ -1,18 +1,24 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import CalendarSection from "@/components/CalendarSection";
+import WeekCalendar from "@/components/WeekCalendar";
+import PendingAppointments from "@/components/PendingAppointments";
+import { signIn, signOut } from "@/auth";
+import ReviewsPanel from "@/components/ReviewsPanel";
+import ProfileSection from "@/components/ProfileSection";
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session) redirect("/login");
+  if (session.user.role === "PATIENT") redirect("/patient");
 
   const profile = await prisma.psychologistProfile.findUnique({
     where: { userId: session.user.id },
   });
 
   const hasGoogleCalendar = !!session.googleAccessToken;
+  const initials = session.user.name
+    ? session.user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    : (session.user.email?.[0] ?? "U").toUpperCase();
 
   const completionFields = [
     session.user.name,
@@ -28,152 +34,186 @@ export default async function DashboardPage() {
   const profileComplete = completionPct === 100;
 
   return (
-    <div className="space-y-5">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">
-          Bienvenido, {session.user.name?.split(" ")[0] ?? "psicólogo"} 👋
-        </h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        </p>
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Profile completion card */}
-        <div className={`rounded-2xl border p-5 ${profileComplete ? "bg-green-50 border-green-200" : "bg-white border-gray-200"}`}>
-          <div className="flex items-start justify-between mb-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${profileComplete ? "bg-green-100" : "bg-indigo-100"}`}>
-              {profileComplete ? (
-                <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-              ) : (
-                <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              )}
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar — desktop only */}
+      <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col z-10">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
-            <span className={`text-sm font-bold ${profileComplete ? "text-green-700" : "text-indigo-600"}`}>{completionPct}%</span>
+            <span className="font-bold text-gray-900">GoogleOpenApp</span>
           </div>
-          <p className={`text-sm font-semibold ${profileComplete ? "text-green-800" : "text-gray-800"}`}>
-            {profileComplete ? "Perfil completo" : "Perfil incompleto"}
-          </p>
-          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 mb-3">
-            <div className={`h-1.5 rounded-full transition-all ${profileComplete ? "bg-green-500" : "bg-indigo-500"}`} style={{ width: `${completionPct}%` }} />
-          </div>
-          {!profileComplete && (
-            <Link href="/dashboard/perfil" className="text-xs text-indigo-600 font-medium hover:underline">
-              Completar perfil →
-            </Link>
-          )}
         </div>
 
-        {/* Specialty card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        <nav className="flex-1 px-4 py-4 space-y-1">
+          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 font-medium text-sm">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            Inicio
           </div>
-          <p className="text-sm font-semibold text-gray-800">Especialidad</p>
-          <p className="text-sm text-gray-500 mt-1">{profile?.specialty ?? <span className="italic">Sin configurar</span>}</p>
-        </div>
+          <a href="/dashboard/patients" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 text-sm transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Pacientes
+          </a>
+        </nav>
 
-        {/* Patients card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center mb-3">
-            <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-          </div>
-          <p className="text-sm font-semibold text-gray-800">Nuevos pacientes</p>
-          <p className={`text-sm mt-1 font-medium ${profile?.acceptsNewPatients ? "text-emerald-600" : "text-gray-400"}`}>
-            {profile?.acceptsNewPatients ? "Aceptando" : "No disponible"}
-          </p>
-        </div>
-      </div>
-
-      {/* Profile summary preview */}
-      {profile && (profile.bio || profile.consultationFee) && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Vista previa del perfil</h2>
-            <Link href="/dashboard/perfil" className="text-sm text-indigo-600 hover:underline font-medium">
-              Editar
-            </Link>
-          </div>
-          <div className="flex items-start gap-4">
+        <div className="px-4 py-4 border-t border-gray-100">
+          <div className="flex items-center gap-3 mb-3">
             {session.user.image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={session.user.image} alt="" className="w-14 h-14 rounded-2xl object-cover flex-shrink-0" />
+              <img src={session.user.image} alt="" className="w-9 h-9 rounded-full" />
             ) : (
-              <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-bold text-xl flex-shrink-0">
-                {session.user.name?.[0]?.toUpperCase() ?? "P"}
+              <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-sm font-semibold">
+                {initials}
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900">{session.user.name}</p>
-              <p className="text-sm text-indigo-600 font-medium">{profile.specialty}</p>
-              {profile.licenseNumber && <p className="text-xs text-gray-400 mt-0.5">Mat. {profile.licenseNumber}</p>}
-              {profile.bio && <p className="text-sm text-gray-600 mt-2 line-clamp-2">{profile.bio}</p>}
-              <div className="flex flex-wrap gap-2 mt-3">
-                {profile.consultationFee && (
-                  <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-lg">
-                    {profile.currency} {profile.consultationFee.toLocaleString()}
-                  </span>
-                )}
-                {profile.sessionDuration && (
-                  <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg">
-                    {profile.sessionDuration} min
-                  </span>
-                )}
-                {profile.modalityOnline && (
-                  <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded-lg">Online</span>
-                )}
-                {profile.modalityPresential && (
-                  <span className="text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2 py-1 rounded-lg">Presencial</span>
-                )}
-                {profile.city && (
-                  <span className="text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2 py-1 rounded-lg">
-                    📍 {profile.city}
-                  </span>
-                )}
-              </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{session.user.name || "Usuario"}</p>
+              <p className="text-xs text-gray-400 truncate">{session.user.email}</p>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* No profile yet */}
-      {!profile && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-6 flex items-start gap-4">
-          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div>
-            <p className="font-semibold text-indigo-800">Configurá tu perfil profesional</p>
-            <p className="text-sm text-indigo-600 mt-1">Cargá tu especialidad, precio de consulta y descripción para que los pacientes puedan encontrarte.</p>
-            <Link href="/dashboard/perfil" className="inline-block mt-3 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-              Crear perfil →
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Google Calendar */}
-      {!hasGoogleCalendar ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
-          <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          </div>
-          <div>
-            <p className="font-semibold text-amber-800 text-sm">Google Calendar no vinculado</p>
-            <p className="text-amber-700 text-xs mt-1">Conectá tu Google para ver tus turnos y citas directamente desde el dashboard.</p>
-            <a
-              href="/api/auth/signin/google?callbackUrl=/dashboard"
-              className="inline-flex items-center gap-2 mt-3 bg-white border border-amber-300 text-amber-800 text-xs font-medium px-3 py-2 rounded-lg hover:bg-amber-50 transition-colors"
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <button
+              type="submit"
+              className="w-full text-sm text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors text-left flex items-center gap-2"
             >
-              Vincular Google Calendar
-            </a>
-          </div>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Cerrar sesión
+            </button>
+          </form>
         </div>
-      ) : (
-        <CalendarSection />
-      )}
+      </aside>
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Mobile header */}
+        <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span className="font-bold text-gray-900 text-sm">GoogleOpenApp</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {session.user.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={session.user.image} alt="" className="w-7 h-7 rounded-full" />
+            ) : (
+              <div className="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-xs font-semibold">
+                {initials}
+              </div>
+            )}
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/login" });
+              }}
+            >
+              <button type="submit" className="text-sm text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                Salir
+              </button>
+            </form>
+          </div>
+        </header>
+
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+          {/* Welcome banner */}
+          <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
+            <div className="flex items-center gap-4">
+              {session.user.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={session.user.image} alt="" className="w-14 h-14 rounded-full border-2 border-white/30 shadow-sm" />
+              ) : (
+                <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white text-xl font-bold border-2 border-white/30">
+                  {initials}
+                </div>
+              )}
+              <div>
+                <h1 className="text-xl font-bold">Hola, {session.user.name?.split(" ")[0] || "usuario"} 👋</h1>
+                <p className="text-indigo-200 text-sm mt-0.5">{session.user.email}</p>
+              </div>
+            </div>
+            <div className="mt-5 pt-4 border-t border-white/10 flex items-center gap-2">
+              {hasGoogleCalendar ? (
+                <span className="inline-flex items-center gap-1.5 bg-white/15 text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block"></span>
+                  Google Calendar conectado
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 bg-white/15 text-amber-200 text-xs font-medium px-3 py-1.5 rounded-full">
+                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block"></span>
+                  Google Calendar no vinculado
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Connect Google Calendar */}
+          {!hasGoogleCalendar && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-semibold text-gray-900">Vincula tu Google Calendar</h2>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Conecta tu cuenta de Google para ver tus próximos eventos directamente aquí.
+                  </p>
+                  <form
+                    action={async () => {
+                      "use server";
+                      await signIn("google", { redirectTo: "/dashboard" });
+                    }}
+                  >
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                        <path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                      </svg>
+                      Conectar con Google
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pending appointment requests */}
+          <PendingAppointments />
+
+          {/* Public profile editor */}
+          <ProfileSection />
+
+          {/* Reviews */}
+          <ReviewsPanel title="Mis calificaciones" />
+
+          {/* Weekly calendar */}
+          {hasGoogleCalendar && <WeekCalendar />}
+        </main>
+      </div>
     </div>
   );
 }

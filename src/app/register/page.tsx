@@ -4,10 +4,12 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import GoogleButton from "@/components/GoogleButton";
+
+type Role = "PATIENT" | "PSYCHOLOGIST";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [role, setRole] = useState<Role>("PATIENT");
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+        body: JSON.stringify({ name: form.name, email: form.email, password: form.password, role }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -41,7 +43,7 @@ export default function RegisterPage() {
         redirect: false,
       });
       if (result?.ok) {
-        router.push("/dashboard");
+        router.push(role === "PSYCHOLOGIST" ? "/dashboard" : "/patient");
       } else {
         router.push("/login");
       }
@@ -62,15 +64,41 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Crear cuenta</h1>
-          <p className="text-gray-500 text-sm mt-1">Regístrate gratis y vincula tu Google Calendar</p>
+          <p className="text-gray-500 text-sm mt-1">Elegí tu rol para comenzar</p>
         </div>
 
-        <GoogleButton label="Registrarse con Google" callbackUrl="/dashboard" />
-
-        <div className="flex items-center gap-3 my-6">
-          <hr className="flex-1 border-gray-200" />
-          <span className="text-xs text-gray-400 font-medium">O con email</span>
-          <hr className="flex-1 border-gray-200" />
+        {/* Role selector */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => setRole("PATIENT")}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+              role === "PATIENT"
+                ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                : "border-gray-200 text-gray-500 hover:border-gray-300"
+            }`}
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span className="text-sm font-semibold">Paciente</span>
+            <span className="text-[11px] text-center leading-tight opacity-70">Reservá turnos con tu psicólogo</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole("PSYCHOLOGIST")}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+              role === "PSYCHOLOGIST"
+                ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                : "border-gray-200 text-gray-500 hover:border-gray-300"
+            }`}
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <span className="text-sm font-semibold">Psicólogo</span>
+            <span className="text-[11px] text-center leading-tight opacity-70">Gestioná tu agenda y pacientes</span>
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -134,14 +162,14 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
           >
-            {loading ? "Creando cuenta..." : "Crear cuenta"}
+            {loading ? "Creando cuenta..." : `Crear cuenta como ${role === "PSYCHOLOGIST" ? "psicólogo" : "paciente"}`}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          ¿Ya tienes cuenta?{" "}
+          ¿Ya tenés cuenta?{" "}
           <Link href="/login" className="text-indigo-600 font-medium hover:underline">
-            Inicia sesión
+            Iniciá sesión
           </Link>
         </p>
       </div>

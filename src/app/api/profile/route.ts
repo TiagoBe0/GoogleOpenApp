@@ -2,98 +2,69 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-function toSlug(str: string) {
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 50);
-}
-
-async function generateUniqueSlug(base: string, excludeUserId: string): Promise<string> {
-  const slug = toSlug(base);
-  const existing = await prisma.psychologistProfile.findFirst({
-    where: { slug, user: { id: { not: excludeUserId } } },
-  });
-  if (!existing) return slug;
-  // Append random suffix if taken
-  return `${slug}-${Math.random().toString(36).slice(2, 6)}`;
-}
-
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  if (session.user.role !== "PSYCHOLOGIST") return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
 
   const profile = await prisma.psychologistProfile.findUnique({
     where: { userId: session.user.id },
   });
 
-  return NextResponse.json({ profile });
+  return NextResponse.json(profile ?? null);
 }
 
-export async function PUT(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  if (session.user.role !== "PSYCHOLOGIST") return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
 
   const body = await req.json();
-
   const {
-    specialty, licenseNumber, bio, phone, address, city, country,
-    yearsOfExperience, consultationFee, currency, languages,
-    website, instagram, linkedin, sessionDuration,
-    modalityOnline, modalityPresential, acceptsNewPatients,
+    slug, specialty, licenseNumber, bio, consultationFee, currency,
+    sessionDuration, timezone, instagramUrl, linkedinUrl, websiteUrl,
   } = body;
 
-  // Resolve slug: use provided or keep existing or auto-generate from name
-  const existing = await prisma.psychologistProfile.findUnique({
-    where: { userId: session.user.id },
-    select: { slug: true },
-  });
-
-  let slug = existing?.slug;
-  if (!slug) {
-    const nameForSlug = body.name || session.user.name || session.user.email;
-    slug = await generateUniqueSlug(nameForSlug, session.user.id);
+  if (slug !== undefined) {
+    if (typeof slug !== "string" || !/^[a-z0-9-]{3,60}$/.test(slug)) {
+      return NextResponse.json({ error: "Slug inválido (solo letras minúsculas, números y guiones, 3-60 caracteres)" }, { status: 400 });
+    }
+    const existing = await prisma.psychologistProfile.findUnique({ where: { slug } });
+    if (existing && existing.userId !== session.user.id) {
+      return NextResponse.json({ error: "Ese slug ya está en uso" }, { status: 409 });
+    }
   }
-
-  const commonData = {
-    slug,
-    specialty: specialty || null,
-    licenseNumber: licenseNumber || null,
-    bio: bio || null,
-    phone: phone || null,
-    address: address || null,
-    city: city || null,
-    country: country || "Argentina",
-    yearsOfExperience: yearsOfExperience ? Number(yearsOfExperience) : null,
-    consultationFee: consultationFee ? Number(consultationFee) : null,
-    currency: currency || "ARS",
-    languages: languages || null,
-    website: website || null,
-    instagram: instagram || null,
-    linkedin: linkedin || null,
-    sessionDuration: sessionDuration ? Number(sessionDuration) : 50,
-    modalityOnline: Boolean(modalityOnline),
-    modalityPresential: Boolean(modalityPresential),
-    acceptsNewPatients: Boolean(acceptsNewPatients),
-  };
 
   const profile = await prisma.psychologistProfile.upsert({
     where: { userId: session.user.id },
-    create: { userId: session.user.id, ...commonData },
-    update: commonData,
+    create: {
+      userId: session.user.id,
+      slug: slug ?? session.user.id,
+      specialty: specialty ?? null,
+      licenseNumber: licenseNumber ?? null,
+      bio: bio ?? null,
+      consultationFee: consultationFee ?? null,
+      currency: currency ?? "ARS",
+      sessionDuration: sessionDuration ?? 50,
+      timezone: timezone ?? "America/Argentina/Buenos_Aires",
+      instagramUrl: instagramUrl ?? null,
+      linkedinUrl: linkedinUrl ?? null,
+      websiteUrl: websiteUrl ?? null,
+    },
+    update: {
+      ...(slug !== undefined && { slug }),
+      ...(specialty !== undefined && { specialty }),
+      ...(licenseNumber !== undefined && { licenseNumber }),
+      ...(bio !== undefined && { bio }),
+      ...(consultationFee !== undefined && { consultationFee }),
+      ...(currency !== undefined && { currency }),
+      ...(sessionDuration !== undefined && { sessionDuration }),
+      ...(timezone !== undefined && { timezone }),
+      ...(instagramUrl !== undefined && { instagramUrl }),
+      ...(linkedinUrl !== undefined && { linkedinUrl }),
+      ...(websiteUrl !== undefined && { websiteUrl }),
+    },
   });
 
-  if (body.name) {
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { name: body.name },
-    });
-  }
-
-  return NextResponse.json({ profile });
+  return NextResponse.json(profile);
 }

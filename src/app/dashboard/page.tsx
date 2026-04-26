@@ -8,14 +8,30 @@ import ProfileSection from "@/components/ProfileSection";
 
 export default async function DashboardPage() {
   const session = await auth();
-
   if (!session) redirect("/login");
   if (session.user.role === "PATIENT") redirect("/patient");
+
+  const profile = await prisma.psychologistProfile.findUnique({
+    where: { userId: session.user.id },
+  });
 
   const hasGoogleCalendar = !!session.googleAccessToken;
   const initials = session.user.name
     ? session.user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : (session.user.email?.[0] ?? "U").toUpperCase();
+
+  const completionFields = [
+    session.user.name,
+    profile?.specialty,
+    profile?.licenseNumber,
+    profile?.bio,
+    profile?.phone,
+    profile?.city,
+    profile?.consultationFee,
+  ];
+  const completedCount = completionFields.filter(Boolean).length;
+  const completionPct = Math.round((completedCount / completionFields.length) * 100);
+  const profileComplete = completionPct === 100;
 
   return (
     <div className="min-h-screen bg-gray-50">

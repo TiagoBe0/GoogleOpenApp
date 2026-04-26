@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 
 interface Props {
   label?: string;
@@ -8,9 +8,14 @@ interface Props {
 }
 
 export default function GoogleButton({ label = "Continuar con Google", callbackUrl = "/dashboard" }: Props) {
+  const handleGoogleSignIn = async () => {
+    await signOut({ redirect: false });
+    await signIn("google", { callbackUrl });
+  };
+
   return (
     <button
-      onClick={() => signIn("google", { callbackUrl })}
+      onClick={handleGoogleSignIn}
       className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-700 font-medium text-sm hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24">

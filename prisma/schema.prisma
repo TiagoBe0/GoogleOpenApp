@@ -14,11 +14,35 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
+  role          String    @default("PATIENT")
+  psychologistId String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  accounts      Account[]
+  sessions      Session[]
+  patients      User[]        @relation("PatientPsychologist")
+  psychologist  User?         @relation("PatientPsychologist", fields: [psychologistId], references: [id])
+  patientAppointments      Appointment[] @relation("PatientAppointments")
+  psychologistAppointments Appointment[] @relation("PsychologistAppointments")
+  reviewsGiven             Review[]      @relation("PatientReviews")
+  reviewsReceived          Review[]      @relation("PsychologistReviews")
+}
+
+model Appointment {
+  id              String   @id @default(cuid())
+  patientId       String
+  psychologistId  String
+  date            DateTime
+  duration        Int      @default(60)
+  notes           String?
+  status          String   @default("PENDING")
+  calendarEventId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  patient      User @relation("PatientAppointments", fields: [patientId], references: [id])
+  psychologist User @relation("PsychologistAppointments", fields: [psychologistId], references: [id])
 }
 
 model Account {
@@ -55,4 +79,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Review {
+  id             String   @id @default(cuid())
+  rating         Int
+  comment        String?
+  patientId      String
+  psychologistId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patient      User @relation("PatientReviews", fields: [patientId], references: [id], onDelete: Cascade)
+  psychologist User @relation("PsychologistReviews", fields: [psychologistId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, psychologistId])
+  @@index([psychologistId])
 }

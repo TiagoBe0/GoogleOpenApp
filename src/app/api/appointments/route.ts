@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 
 const mp = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN! });
@@ -64,34 +65,49 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Create MercadoPago preference
+  // Create MercadoPago preference — clean up appointment if MP fails
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  const pref = await preference.create({
-    body: {
-      items: [
-        {
-          id: appointment.id,
-          title: `Consulta psicológica — ${psy.name}`,
-          description: `Sesión el ${slotDate.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })} a las ${slotDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`,
-          quantity: 1,
-          unit_price: fee,
-          currency_id: currency,
+  let pref;
+  try {
+    pref = await preference.create({
+      body: {
+        items: [
+          {
+            id: appointment.id,
+            title: `Consulta psicológica — ${psy.name}`,
+            description: `Sesión el ${slotDate.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })} a las ${slotDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`,
+            quantity: 1,
+            unit_price: fee,
+            currency_id: currency,
+          },
+        ],
+        payer: { name: patientName, email: patientEmail },
+        external_reference: appointment.id,
+        back_urls: {
+          success: `${baseUrl}/payments/success`,
+          failure: `${baseUrl}/payments/failure`,
+          pending: `${baseUrl}/payments/pending`,
         },
-      ],
-      payer: { name: patientName, email: patientEmail },
-      external_reference: appointment.id,
-      back_urls: {
-        success: `${baseUrl}/payments/success`,
-        failure: `${baseUrl}/payments/failure`,
-        pending: `${baseUrl}/payments/pending`,
+        auto_return: "approved",
+        notification_url: `${baseUrl}/api/payments/webhook`,
+        statement_descriptor: "PsicoApp",
       },
-      auto_return: "approved",
-      notification_url: `${baseUrl}/api/payments/webhook`,
-      statement_descriptor: "PsicoApp",
-    },
-  });
+    });
+  } catch (mpError) {
+    // Delete orphan appointment so the slot stays free
+    await prisma.appointment.delete({ where: { id: appointment.id } });
+    console.error("MercadoPago preference creation failed:", mpError);
+    return NextResponse.json(
+      { error: "No se pudo conectar con MercadoPago. Intentá de nuevo." },
+      { status: 502 }
+    );
+  }
 
-  // Store preferenceId
+  if (!pref.init_point) {
+    await prisma.appointment.delete({ where: { id: appointment.id } });
+    return NextResponse.json({ error: "MercadoPago no devolvió URL de pago." }, { status: 502 });
+  }
+
   await prisma.appointment.update({
     where: { id: appointment.id },
     data: { preferenceId: pref.id },
@@ -100,16 +116,20 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     appointmentId: appointment.id,
     checkoutUrl: pref.init_point,
-    sandboxUrl: pref.sandbox_init_point,
+    sandboxUrl: pref.sandbox_init_point ?? pref.init_point,
   });
 }
 
 export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const psychologistId = searchParams.get("psychologistId");
 
-  if (!psychologistId) {
-    return NextResponse.json({ error: "Falta psychologistId" }, { status: 400 });
+  // Only allow fetching your own appointments
+  if (!psychologistId || psychologistId !== session.user.id) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const appointments = await prisma.appointment.findMany({

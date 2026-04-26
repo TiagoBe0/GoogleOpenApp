@@ -48,7 +48,12 @@ export default function BookingWidget({ psychologistId, psychologistName, fee, c
     if (!date) return;
     setLoadingSlots(true);
     try {
-      const res = await fetch(`/api/appointments/available-slots?psychologistId=${psychologistId}&date=${date}`);
+      // new Date().getTimezoneOffset() returns minutes ahead of UTC (negative for UTC+)
+      // We pass it as "minutes behind UTC" so Argentina UTC-3 sends 180
+      const tzOffset = new Date().getTimezoneOffset();
+      const res = await fetch(
+        `/api/appointments/available-slots?psychologistId=${psychologistId}&date=${date}&tzOffset=${tzOffset}`
+      );
       const data = await res.json();
       setSlots(data.slots ?? []);
       setStep("slot");
@@ -102,8 +107,16 @@ export default function BookingWidget({ psychologistId, psychologistName, fee, c
       }
 
       // Redirect to MercadoPago checkout
-      const url = process.env.NODE_ENV === "production" ? data.checkoutUrl : data.sandboxUrl;
-      window.location.href = url ?? data.checkoutUrl;
+      const url: string | undefined =
+        process.env.NODE_ENV === "production" ? data.checkoutUrl : (data.sandboxUrl ?? data.checkoutUrl);
+
+      if (!url) {
+        setError("No se pudo generar el link de pago. Intentá de nuevo.");
+        setStep("patient");
+        return;
+      }
+
+      window.location.href = url;
     } catch {
       setError("Error de conexión. Intentá de nuevo.");
       setStep("patient");

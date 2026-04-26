@@ -17,36 +17,61 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts           Account[]
-  sessions           Session[]
+  accounts            Account[]
+  sessions            Session[]
   psychologistProfile PsychologistProfile?
+  appointments        Appointment[]
 }
 
 model PsychologistProfile {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
-  specialty           String?  // Especialidad principal
-  licenseNumber       String?  // Número de matrícula / colegiado
-  bio                 String?  // Descripción profesional
-  phone               String?
-  address             String?  // Dirección del consultorio
-  city                String?
-  country             String?  @default("Argentina")
-  yearsOfExperience   Int?
-  consultationFee     Float?   // Precio de consulta (moneda local)
-  currency            String?  @default("ARS")
-  languages           String?  // Idiomas separados por coma
-  website             String?
-  instagram           String?
-  linkedin            String?
-  sessionDuration     Int?     // Duración de sesión en minutos
-  modalityOnline      Boolean  @default(false)
-  modalityPresential  Boolean  @default(true)
-  acceptsNewPatients  Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  slug               String?  @unique
+  specialty          String?
+  licenseNumber      String?
+  bio                String?
+  phone              String?
+  address            String?
+  city               String?
+  country            String?  @default("Argentina")
+  yearsOfExperience  Int?
+  consultationFee    Float?
+  currency           String?  @default("ARS")
+  languages          String?
+  website            String?
+  instagram          String?
+  linkedin           String?
+  sessionDuration    Int?     @default(50)
+  modalityOnline     Boolean  @default(false)
+  modalityPresential Boolean  @default(true)
+  acceptsNewPatients Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// status: pending_payment | confirmed | cancelled | completed
+// paymentStatus: pending | approved | rejected | in_process
+model Appointment {
+  id              String   @id @default(cuid())
+  psychologistId  String
+  patientName     String
+  patientEmail    String
+  patientPhone    String?
+  scheduledAt     DateTime
+  durationMinutes Int      @default(50)
+  status          String   @default("pending_payment")
+  paymentStatus   String   @default("pending")
+  paymentId       String?
+  preferenceId    String?
+  amount          Float
+  currency        String   @default("ARS")
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  psychologist User @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
 }
 
 model Account {

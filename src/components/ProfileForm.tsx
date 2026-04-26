@@ -62,6 +62,8 @@ export default function ProfileForm({ initialUser, initialProfile }: Props) {
   const p = initialProfile;
 
   const [name, setName] = useState(initialUser.name);
+  const [slug, setSlug] = useState(p?.slug ?? "");
+  const [savedSlug, setSavedSlug] = useState(p?.slug ?? "");
   const [form, setForm] = useState({
     specialty: p?.specialty ?? "",
     licenseNumber: p?.licenseNumber ?? "",
@@ -112,12 +114,14 @@ export default function ProfileForm({ initialUser, initialProfile }: Props) {
       const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, name }),
+        body: JSON.stringify({ ...form, name, slug: slug || undefined }),
       });
       if (!res.ok) {
         const d = await res.json();
         setError(d.error || "Error al guardar");
       } else {
+        const d = await res.json();
+        if (d.profile?.slug) setSavedSlug(d.profile.slug);
         setSaved(true);
       }
     } catch {
@@ -129,6 +133,31 @@ export default function ProfileForm({ initialUser, initialProfile }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Public profile link */}
+      {savedSlug && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-4 flex items-center gap-3">
+          <svg className="w-5 h-5 text-indigo-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-indigo-500 font-medium mb-0.5">Tu link público de reservas</p>
+            <a
+              href={`/p/${savedSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-indigo-700 font-semibold hover:underline truncate block"
+            >
+              {typeof window !== "undefined" ? window.location.origin : ""}/p/{savedSlug}
+            </a>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(`${window.location.origin}/p/${savedSlug}`)}
+            className="text-xs text-indigo-500 hover:text-indigo-700 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors flex-shrink-0"
+          >
+            Copiar
+          </button>
+        </div>
+      )}
+
       {/* Profile completion banner */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-2">

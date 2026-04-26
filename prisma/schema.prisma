@@ -17,8 +17,36 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  accounts           Account[]
+  sessions           Session[]
+  psychologistProfile PsychologistProfile?
+}
+
+model PsychologistProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  specialty           String?  // Especialidad principal
+  licenseNumber       String?  // Número de matrícula / colegiado
+  bio                 String?  // Descripción profesional
+  phone               String?
+  address             String?  // Dirección del consultorio
+  city                String?
+  country             String?  @default("Argentina")
+  yearsOfExperience   Int?
+  consultationFee     Float?   // Precio de consulta (moneda local)
+  currency            String?  @default("ARS")
+  languages           String?  // Idiomas separados por coma
+  website             String?
+  instagram           String?
+  linkedin            String?
+  sessionDuration     Int?     // Duración de sesión en minutos
+  modalityOnline      Boolean  @default(false)
+  modalityPresential  Boolean  @default(true)
+  acceptsNewPatients  Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {

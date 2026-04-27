@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import WeekCalendar from "@/components/WeekCalendar";
 import PendingAppointments from "@/components/PendingAppointments";
+import AvailabilityPanel from "@/components/AvailabilityPanel";
 import { signIn } from "@/auth";
 import ReviewsPanel from "@/components/ReviewsPanel";
 import Link from "next/link";
@@ -15,7 +16,12 @@ export default async function DashboardPage() {
   const now = new Date();
   const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const [profile, upcomingCount, pendingCount, patientsCount] = await Promise.all([
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(now);
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const [profile, upcomingCount, pendingCount, patientsCount, todayApts] = await Promise.all([
     prisma.psychologistProfile.findUnique({ where: { userId: session.user.id } }),
     prisma.appointment.count({
       where: {
@@ -32,7 +38,40 @@ export default async function DashboardPage() {
       },
     }),
     prisma.user.count({ where: { psychologistId: session.user.id } }),
+    prisma.appointment.findMany({
+      where: {
+        psychologistId: session.user.id,
+        status: { not: "CANCELLED" },
+        date: { gte: todayStart, lte: todayEnd },
+      },
+      orderBy: { date: "asc" },
+      include: { patient: { select: { name: true, email: true } } },
+    }),
   ]);
+
+  // Fetch today's Google Calendar events server-side
+  interface GCalEvent { summary?: string; start: { dateTime?: string }; end: { dateTime?: string }; htmlLink?: string }
+  let todayGoogleEvents: GCalEvent[] = [];
+  if (session.googleAccessToken) {
+    try {
+      const gcalUrl = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+      gcalUrl.searchParams.set("timeMin", todayStart.toISOString());
+      gcalUrl.searchParams.set("timeMax", todayEnd.toISOString());
+      gcalUrl.searchParams.set("singleEvents", "true");
+      gcalUrl.searchParams.set("orderBy", "startTime");
+      gcalUrl.searchParams.set("maxResults", "20");
+      const gcalRes = await fetch(gcalUrl.toString(), {
+        headers: { Authorization: `Bearer ${session.googleAccessToken}` },
+        next: { revalidate: 0 },
+      });
+      if (gcalRes.ok) {
+        const gcalData = await gcalRes.json();
+        todayGoogleEvents = (gcalData.items ?? []).filter((e: GCalEvent) => e.start?.dateTime);
+      }
+    } catch { /* ignore */ }
+  }
+
+  const fmtTime = (d: Date) => d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 
   const hasGoogleCalendar = !!session.googleAccessToken;
 
@@ -165,6 +204,66 @@ export default async function DashboardPage() {
           <p className="text-xs text-gray-500 mt-0.5">Pacientes</p>
         </Link>
       </div>
+
+      {/* Today's agenda */}
+      {(todayApts.length > 0 || todayGoogleEvents.length > 0) && (
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-700">Agenda de hoy</p>
+            <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full">
+              {todayApts.length + todayGoogleEvents.length} evento{todayApts.length + todayGoogleEvents.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {/* Internal appointments */}
+            {todayApts.map((apt) => {
+              const d = new Date(apt.date);
+              const name = apt.patient?.name ?? apt.patientName ?? apt.patient?.email ?? apt.patientEmail ?? "Paciente";
+              const isConfirmed = apt.status === "CONFIRMED";
+              return (
+                <div key={apt.id} className="px-5 py-3 flex items-center gap-3">
+                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isConfirmed ? "bg-emerald-500" : "bg-amber-500"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
+                    <p className="text-xs text-gray-400">{fmtTime(d)} · {apt.duration} min</p>
+                  </div>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                    isConfirmed ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                  }`}>
+                    {isConfirmed ? "Confirmado" : "Pendiente"}
+                  </span>
+                </div>
+              );
+            })}
+            {/* Google Calendar events */}
+            {todayGoogleEvents.map((evt, i) => {
+              const startTime = evt.start.dateTime ? fmtTime(new Date(evt.start.dateTime)) : "";
+              const endTime = evt.end?.dateTime ? fmtTime(new Date(evt.end.dateTime)) : "";
+              return (
+                <a
+                  key={i}
+                  href={evt.htmlLink ?? "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-indigo-400" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{evt.summary ?? "Evento"}</p>
+                    <p className="text-xs text-gray-400">{startTime}{endTime ? ` – ${endTime}` : ""}</p>
+                  </div>
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 bg-indigo-50 text-indigo-600">
+                    Google Cal
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Weekly availability */}
+      <AvailabilityPanel />
 
       {/* Pending appointment requests */}
       <PendingAppointments />

@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import GoogleButton from "@/components/GoogleButton";
 
 type Role = "PATIENT" | "PSYCHOLOGIST";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [role, setRole] = useState<Role>("PATIENT");
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
@@ -38,16 +36,18 @@ export default function RegisterPage() {
         setError(data.error || "Error al registrar");
         return;
       }
+      const target = role === "PSYCHOLOGIST" ? "/dashboard" : "/patient";
       const result = await signIn("credentials", {
         email: form.email,
         password: form.password,
         redirect: false,
+        redirectTo: target,
       });
       if (result?.ok) {
-        router.push(role === "PSYCHOLOGIST" ? "/dashboard" : "/patient");
-      } else {
-        router.push("/login");
+        window.location.assign(target);
+        return;
       }
+      setError("La cuenta se creó, pero no se pudo iniciar sesión automáticamente. Probá iniciar sesión.");
     } catch {
       setError("Error de conexión. Intenta nuevamente.");
     } finally {

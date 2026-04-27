@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import React from "react";
 
 const NAV_ITEMS = [
   {
@@ -48,7 +49,7 @@ export default function DashboardNav() {
   return (
     <>
       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Menú</p>
-      {NAV_ITEMS.map(({ href, label, icon, badge }) => {
+      {NAV_ITEMS.map(({ href, label, icon, badge }: { href: string; label: string; icon: React.ReactNode; badge?: string }) => {
         const active = pathname === href;
         return (
           <Link

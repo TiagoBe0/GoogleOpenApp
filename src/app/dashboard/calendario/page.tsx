@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { signIn } from "@/auth";
 import WeekCalendar from "@/components/WeekCalendar";
+import AvailabilityPanel from "@/components/AvailabilityPanel";
 
 export default async function CalendarioPage() {
   const session = await auth();
@@ -100,6 +101,9 @@ export default async function CalendarioPage() {
           </div>
         </div>
       )}
+
+      {/* Available slots for the week */}
+      <AvailabilityPanel />
 
       {/* Full week calendar */}
       <WeekCalendar />

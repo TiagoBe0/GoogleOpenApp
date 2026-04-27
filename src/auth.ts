@@ -57,6 +57,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return url;
+
+      try {
+        const nextUrl = new URL(url);
+        if (nextUrl.origin === baseUrl) {
+          return `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+        }
+      } catch {
+        return baseUrl;
+      }
+
+      return baseUrl;
+    },
     async signIn({ account, profile }) {
       if (account?.provider === "google") {
         const googleProfile = profile as { email_verified?: boolean } | undefined;

@@ -68,21 +68,21 @@ export default function ProfileForm({ initialUser, initialProfile }: Props) {
     specialty: p?.specialty ?? "",
     licenseNumber: p?.licenseNumber ?? "",
     bio: p?.bio ?? "",
-    phone: p?.phone ?? "",
-    address: p?.address ?? "",
-    city: p?.city ?? "",
-    country: p?.country ?? "Argentina",
-    yearsOfExperience: p?.yearsOfExperience?.toString() ?? "",
+    phone: "",
+    address: "",
+    city: "",
+    country: "Argentina",
+    yearsOfExperience: "",
     consultationFee: p?.consultationFee?.toString() ?? "",
     currency: p?.currency ?? "ARS",
-    languages: p?.languages ?? "",
-    website: p?.website ?? "",
-    instagram: p?.instagram ?? "",
-    linkedin: p?.linkedin ?? "",
+    languages: "",
+    website: p?.websiteUrl ?? "",
+    instagram: p?.instagramUrl ?? "",
+    linkedin: p?.linkedinUrl ?? "",
     sessionDuration: p?.sessionDuration?.toString() ?? "50",
-    modalityOnline: p?.modalityOnline ?? false,
-    modalityPresential: p?.modalityPresential ?? true,
-    acceptsNewPatients: p?.acceptsNewPatients ?? true,
+    modalityOnline: false,
+    modalityPresential: true,
+    acceptsNewPatients: true,
   });
 
   const [saving, setSaving] = useState(false);
@@ -100,8 +100,7 @@ export default function ProfileForm({ initialUser, initialProfile }: Props) {
   };
 
   const completionFields = [
-    name, form.specialty, form.licenseNumber, form.bio,
-    form.phone, form.city, form.consultationFee,
+    name, form.specialty, form.licenseNumber, form.bio, form.consultationFee,
   ];
   const completedCount = completionFields.filter(Boolean).length;
   const completionPct = Math.round((completedCount / completionFields.length) * 100);
@@ -114,7 +113,19 @@ export default function ProfileForm({ initialUser, initialProfile }: Props) {
       const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, name, slug: slug || undefined }),
+        body: JSON.stringify({
+            specialty: form.specialty || null,
+            licenseNumber: form.licenseNumber || null,
+            bio: form.bio || null,
+            consultationFee: form.consultationFee ? parseFloat(form.consultationFee) : null,
+            currency: form.currency,
+            sessionDuration: parseInt(form.sessionDuration) || 50,
+            websiteUrl: form.website || null,
+            instagramUrl: form.instagram || null,
+            linkedinUrl: form.linkedin || null,
+            name,
+            slug: slug || undefined,
+          }),
       });
       if (!res.ok) {
         const d = await res.json();

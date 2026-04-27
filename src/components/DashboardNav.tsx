@@ -1,9 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { href: string; label: string; icon: ReactNode; badge?: string }[] = [
   {
     href: "/dashboard",
     label: "Inicio",

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import GoogleButton from "@/components/GoogleButton";
 
 type Role = "PATIENT" | "PSYCHOLOGIST";
 
@@ -99,6 +100,17 @@ export default function RegisterPage() {
             <span className="text-sm font-semibold">Psicólogo</span>
             <span className="text-[11px] text-center leading-tight opacity-70">Gestioná tu agenda y pacientes</span>
           </button>
+        </div>
+
+        <GoogleButton
+          label={`Registrarse con Google como ${role === "PSYCHOLOGIST" ? "psicólogo" : "paciente"}`}
+          callbackUrl={`/auth/complete?role=${role}`}
+        />
+
+        <div className="flex items-center gap-3 my-6">
+          <hr className="flex-1 border-gray-200" />
+          <span className="text-xs text-gray-400 font-medium">O con email</span>
+          <hr className="flex-1 border-gray-200" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -22,7 +22,7 @@ export default async function PaymentSuccessPage({
           ¡Pago confirmado!
         </h1>
         <p className="text-gray-500 text-sm mb-6">
-          Tu consulta fue reservada y el pago fue procesado correctamente. El psicólogo recibirá la confirmación.
+          Tu pago fue procesado correctamente. El turno queda como solicitud pendiente hasta que el psicólogo lo confirme.
         </p>
         {appointment && (
           <p className="text-xs text-gray-400 mb-6">Referencia: {appointment}</p>

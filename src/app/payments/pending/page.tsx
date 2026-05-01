@@ -22,7 +22,7 @@ export default async function PaymentPendingPage({
           Pago en proceso
         </h1>
         <p className="text-gray-500 text-sm mb-6">
-          Tu pago está siendo procesado. Te notificaremos cuando se confirme. El turno quedó reservado mientras tanto.
+          Tu pago está siendo procesado. El turno queda como solicitud pendiente hasta que el psicólogo lo confirme.
         </p>
         {appointment && (
           <p className="text-xs text-gray-400 mb-6">Referencia: {appointment}</p>

@@ -15,6 +15,7 @@ model User {
   image         String?
   password      String?
   role          String    @default("PATIENT")
+  isActive      Boolean   @default(true)
   psychologistId String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -28,6 +29,7 @@ model User {
   reviewsGiven             Review[]      @relation("PatientReviews")
   reviewsReceived          Review[]      @relation("PsychologistReviews")
   psychologistProfile      PsychologistProfile?
+  patientProfile           PatientProfile?
 }
 
 model Appointment {
@@ -47,6 +49,7 @@ model Appointment {
   preferenceId    String?
   paymentId       String?
   paymentStatus   String?
+  paymentProofUrl String?
   amount          Float?
   currency        String?
   createdAt       DateTime @default(now())
@@ -63,15 +66,40 @@ model PsychologistProfile {
   specialty       String?
   licenseNumber   String?
   bio             String?
+  phone           String?
+  address         String?
+  city            String?
+  country         String?  @default("Argentina")
+  yearsOfExperience Int?
   consultationFee Float?
   currency        String   @default("ARS")
+  languages       String?
+  website         String?
+  instagram       String?
+  linkedin        String?
   sessionDuration Int      @default(50)
   timezone        String   @default("America/Argentina/Buenos_Aires")
+  modalityOnline  Boolean  @default(false)
+  modalityPresential Boolean @default(true)
+  acceptsNewPatients Boolean @default(true)
+  cbu             String?
+  alias           String?
   instagramUrl    String?
   linkedinUrl     String?
   websiteUrl      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PatientProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  dni       String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -145,7 +145,7 @@ export default function ProfileForm({ initialUser, initialProfile }: Props) {
               rel="noopener noreferrer"
               className="text-sm text-indigo-700 font-semibold hover:underline truncate block"
             >
-              {typeof window !== "undefined" ? window.location.origin : ""}/p/{savedSlug}
+              /p/{savedSlug}
             </a>
           </div>
           <button

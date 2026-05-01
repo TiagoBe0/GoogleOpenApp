@@ -10,11 +10,30 @@ export async function GET() {
   const patient = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      psychologist: { select: { id: true, name: true, email: true, image: true } },
+      psychologist: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          psychologistProfile: { select: { sessionDuration: true, cbu: true, alias: true } },
+        },
+      },
     },
   });
 
-  return NextResponse.json(patient?.psychologist ?? null);
+  const psych = patient?.psychologist;
+  if (!psych) return NextResponse.json(null);
+
+  return NextResponse.json({
+    id: psych.id,
+    name: psych.name,
+    email: psych.email,
+    image: psych.image,
+    sessionDuration: psych.psychologistProfile?.sessionDuration ?? 50,
+    cbu: psych.psychologistProfile?.cbu ?? null,
+    alias: psych.psychologistProfile?.alias ?? null,
+  });
 }
 
 export async function POST(req: NextRequest) {

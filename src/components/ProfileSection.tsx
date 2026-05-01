@@ -11,6 +11,8 @@ interface Profile {
   consultationFee: number | null;
   currency: string;
   sessionDuration: number;
+  cbu: string | null;
+  alias: string | null;
   instagramUrl: string | null;
   linkedinUrl: string | null;
   websiteUrl: string | null;
@@ -31,6 +33,8 @@ export default function ProfileSection() {
     consultationFee: "",
     currency: "ARS",
     sessionDuration: "50",
+    cbu: "",
+    alias: "",
     instagramUrl: "",
     linkedinUrl: "",
     websiteUrl: "",
@@ -50,6 +54,8 @@ export default function ProfileSection() {
             consultationFee: data.consultationFee != null ? String(data.consultationFee) : "",
             currency: data.currency ?? "ARS",
             sessionDuration: String(data.sessionDuration ?? 50),
+            cbu: data.cbu ?? "",
+            alias: data.alias ?? "",
             instagramUrl: data.instagramUrl ?? "",
             linkedinUrl: data.linkedinUrl ?? "",
             websiteUrl: data.websiteUrl ?? "",
@@ -78,6 +84,8 @@ export default function ProfileSection() {
           consultationFee: form.consultationFee ? parseFloat(form.consultationFee) : null,
           currency: form.currency || "ARS",
           sessionDuration: parseInt(form.sessionDuration) || 50,
+          cbu: form.cbu || null,
+          alias: form.alias || null,
           instagramUrl: form.instagramUrl || null,
           linkedinUrl: form.linkedinUrl || null,
           websiteUrl: form.websiteUrl || null,
@@ -154,15 +162,18 @@ export default function ProfileSection() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Duración de sesión (min)</label>
-            <input
-              type="number"
-              min="15"
-              max="120"
+            <label className="block text-xs font-medium text-gray-500 mb-1">Duración de sesión</label>
+            <select
               value={form.sessionDuration}
               onChange={(e) => setForm({ ...form, sessionDuration: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-            />
+            >
+              <option value="45">45 minutos</option>
+              <option value="50">50 minutos</option>
+              <option value="60">1 hora</option>
+              <option value="90">1 hora 30 minutos</option>
+              <option value="120">2 horas</option>
+            </select>
           </div>
 
           <div>
@@ -186,6 +197,27 @@ export default function ProfileSection() {
                 placeholder="5000"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">CBU</label>
+            <input
+              value={form.cbu}
+              onChange={(e) => setForm({ ...form, cbu: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 font-mono"
+              placeholder="0000000000000000000000"
+              maxLength={22}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Alias CBU</label>
+            <input
+              value={form.alias}
+              onChange={(e) => setForm({ ...form, alias: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              placeholder="nombre.apellido.banco"
+            />
           </div>
 
           <div>

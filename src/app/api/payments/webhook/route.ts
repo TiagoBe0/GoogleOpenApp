@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createHmac } from "crypto";
 
-function verifySignature(req: NextRequest, rawBody: string): boolean {
+function verifySignature(req: NextRequest): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) return true; // skip in dev when not configured
 
@@ -27,7 +27,7 @@ function verifySignature(req: NextRequest, rawBody: string): boolean {
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
 
-  if (!verifySignature(req, rawBody)) {
+  if (!verifySignature(req)) {
     return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
   }
 
@@ -59,19 +59,25 @@ export async function POST(req: NextRequest) {
 
   if (!appointmentId) return NextResponse.json({ ok: true });
 
-  const statusMap: Record<string, string> = {
-    approved: "CONFIRMED",
+  const appointmentStatusMap: Record<string, string> = {
     rejected: "CANCELLED",
     cancelled: "CANCELLED",
   };
+  const paymentStatusMap: Record<string, string> = {
+    approved: "PAID",
+    pending: "PENDING",
+    in_process: "PENDING",
+    rejected: "REJECTED",
+    cancelled: "CANCELLED",
+  };
 
-  const newStatus = statusMap[mpStatus];
+  const newStatus = appointmentStatusMap[mpStatus];
 
   await prisma.appointment.update({
     where: { id: appointmentId },
     data: {
       paymentId,
-      paymentStatus: mpStatus,
+      paymentStatus: paymentStatusMap[mpStatus] ?? mpStatus,
       ...(newStatus ? { status: newStatus } : {}),
     },
   });

@@ -44,6 +44,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user || !user.password) return null;
+        if (!user.isActive) return null;
 
         const valid = await bcrypt.compare(
           credentials.password as string,
@@ -52,15 +53,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!valid) return null;
 
-        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role };
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role, isActive: user.isActive };
       },
     }),
   ],
   callbacks: {
-    async signIn({ account, profile }) {
+    async signIn({ account, profile, user }) {
       if (account?.provider === "google") {
         const googleProfile = profile as { email_verified?: boolean } | undefined;
-        return googleProfile?.email_verified === true;
+        if (googleProfile?.email_verified !== true) return false;
+
+        const email = user.email ?? profile?.email;
+        if (!email) return false;
+
+        const dbUser = await prisma.user.findUnique({ where: { email } });
+        return dbUser?.isActive !== false;
       }
 
       return true;
@@ -73,10 +80,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
+        token.isActive = (user as { isActive?: boolean }).isActive;
       }
-      if (token.id && !token.role) {
+      if (token.id) {
         const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
-        token.role = dbUser?.role ?? "PATIENT";
+        token.role = dbUser ? (dbUser.isActive ? dbUser.role : "INACTIVE") : token.role ?? "PATIENT";
+        token.isActive = dbUser?.isActive ?? token.isActive ?? true;
       }
       return token;
     },
@@ -84,6 +93,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.isActive = token.isActive as boolean | undefined;
         session.googleAccessToken = token.googleAccessToken as string | undefined;
       }
       return session;

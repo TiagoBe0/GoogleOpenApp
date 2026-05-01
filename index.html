@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PsicoLink · Ingresá</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#2D4270; --navy-dk:#1F3060; --navy-lt:#EEF2FA;
+  --steel:#8AACC8; --steel-lt:#D8EAF7;
+  --sage:#7FA98A;  --sage-lt:#D0E8D8;
+  --bg:#F4F6FA; --surface:#fff;
+  --text:#1C2940; --muted:#8A96A8; --border:#E2E8F0;
+  --danger:#C0392B; --danger-lt:#FDF0EE;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);}
+
+/* ── Shell ── */
+.shell{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
+
+/* ── Left panel ── */
+.left{
+  background:var(--navy);
+  display:flex;flex-direction:column;
+  padding:40px 52px;
+  position:relative;overflow:hidden;
+}
+.left::before{
+  content:'';position:absolute;
+  width:400px;height:400px;border-radius:50%;
+  background:rgba(138,172,200,.12);
+  bottom:-120px;left:-100px;
+}
+.left::after{
+  content:'';position:absolute;
+  width:260px;height:260px;border-radius:50%;
+  background:rgba(127,169,138,.1);
+  top:-60px;right:-60px;
+}
+
+.left-logo{display:flex;align-items:center;gap:10px;margin-bottom:64px;position:relative;z-index:1;}
+.logo-mark{width:32px;height:32px;display:grid;grid-template-columns:1fr 1fr;gap:2px;flex-shrink:0;}
+.logo-mark span{border-radius:3px;}
+.logo-mark span:nth-child(1){background:#fff;}
+.logo-mark span:nth-child(2){background:var(--steel);}
+.logo-mark span:nth-child(3){background:var(--sage);}
+.logo-mark span:nth-child(4){background:var(--steel-lt);}
+.logo-img{width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;}
+.logo-text{font-family:'DM Serif Display',serif;font-size:22px;color:#fff;}
+
+.left-body{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1;}
+.left-tag{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);
+  font-size:12px;font-weight:600;padding:6px 14px;
+  border-radius:20px;border:1px solid rgba(255,255,255,.15);
+  margin-bottom:24px;width:fit-content;
+}
+.left-h{
+  font-family:'DM Serif Display',serif;
+  font-size:40px;line-height:1.15;color:#fff;
+  margin-bottom:18px;
+  text-wrap:balance;
+}
+.left-sub{font-size:15px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:40px;max-width:360px;}
+
+.feature-list{display:flex;flex-direction:column;gap:14px;}
+.feature{display:flex;align-items:flex-start;gap:12px;}
+.feature-icon{
+  width:34px;height:34px;border-radius:9px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:15px;
+}
+.feature-text strong{display:block;font-size:13.5px;font-weight:600;color:#fff;margin-bottom:2px;}
+.feature-text span{font-size:12px;color:rgba(255,255,255,.5);}
+
+.left-footer{
+  position:relative;z-index:1;
+  font-size:11.5px;color:rgba(255,255,255,.3);
+  display:flex;gap:16px;margin-top:40px;
+}
+.left-footer a{color:rgba(255,255,255,.35);cursor:pointer;}
+.left-footer a:hover{color:rgba(255,255,255,.7);}
+
+/* ── Right panel ── */
+.right{
+  display:flex;align-items:center;justify-content:center;
+  padding:40px 52px;background:var(--bg);
+  overflow-y:auto;
+}
+.auth-box{width:100%;max-width:420px;}
+
+.auth-tab-row{
+  display:flex;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;
+  padding:4px;margin-bottom:28px;
+}
+.auth-tab{
+  flex:1;padding:9px;border:none;background:none;
+  font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:600;
+  color:var(--muted);cursor:pointer;border-radius:9px;transition:all .18s;
+}
+.auth-tab.active{background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(45,66,112,.2);}
+
+/* ── Google button ── */
+.google-btn{
+  width:100%;padding:13px 20px;
+  border:1.5px solid var(--border);border-radius:11px;
+  background:var(--surface);
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--text);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:all .18s;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+.google-btn:hover{border-color:var(--steel);background:var(--steel-lt);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08);}
+.google-btn:active{transform:translateY(0);}
+
+/* Google logo SVG inline */
+.g-logo{width:20px;height:20px;flex-shrink:0;}
+
+/* ── Divider ── */
+.or-row{display:flex;align-items:center;gap:12px;margin:20px 0;}
+.or-line{flex:1;height:1px;background:var(--border);}
+.or-text{font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap;}
+
+/* ── Form ── */
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;letter-spacing:.2px;}
+.form-input{
+  width:100%;padding:12px 14px;
+  border:1.5px solid var(--border);border-radius:10px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);
+  background:var(--surface);outline:none;transition:border-color .15s;
+}
+.form-input:focus{border-color:var(--steel);box-shadow:0 0 0 3px rgba(138,172,200,.15);}
+.form-input.error{border-color:var(--danger);box-shadow:0 0 0 3px rgba(192,57,43,.1);}
+.form-input::placeholder{color:#B0BAC8;}
+.form-hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+.form-error{font-size:11.5px;color:var(--danger);margin-top:4px;display:flex;align-items:center;gap:4px;}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+.input-wrap{position:relative;}
+.input-icon{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--muted);cursor:pointer;font-size:14px;}
+
+/* ── Role selector ── */
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.role-card{
+  border:1.5px solid var(--border);border-radius:11px;
+  padding:14px 12px;cursor:pointer;transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;
+  background:var(--surface);
+}
+.role-card:hover{border-color:var(--steel);background:var(--steel-lt);}
+.role-card.selected{border-color:var(--navy);background:var(--navy-lt);}
+.role-icon{font-size:22px;}
+.role-label{font-size:13px;font-weight:600;color:var(--text);}
+.role-sub{font-size:11px;color:var(--muted);}
+.role-card.selected .role-label{color:var(--navy);}
+
+/* ── Password strength ── */
+.strength-bar{height:3px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden;}
+.strength-fill{height:100%;border-radius:2px;transition:width .3s,background .3s;}
+
+/* ── Submit btn ── */
+.submit-btn{
+  width:100%;padding:13px;border:none;border-radius:11px;
+  background:var(--navy);color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;transition:all .18s;margin-top:4px;
+}
+.submit-btn:hover:not(:disabled){background:var(--navy-dk);transform:translateY(-1px);box-shadow:0 4px 16px rgba(45,66,112,.28);}
+.submit-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;transform:none;box-shadow:none;}
+
+.terms-text{font-size:11.5px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6;}
+.terms-text a{color:var(--steel);cursor:pointer;font-weight:600;}
+.terms-text a:hover{color:var(--navy);}
+
+/* ── Step indicator ── */
+.steps-mini{display:flex;align-items:center;gap:6px;margin-bottom:22px;}
+.step-dot{
+  width:28px;height:4px;border-radius:2px;
+  background:var(--border);transition:background .2s;
+}
+.step-dot.active{background:var(--navy);}
+.step-dot.done{background:var(--sage);}
+.steps-label{font-size:12px;color:var(--muted);margin-left:6px;}
+
+/* ── Success screen ── */
+.success-box{text-align:center;}
+.success-anim{
+  width:72px;height:72px;border-radius:50%;
+  background:var(--sage-lt);margin:0 auto 20px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-h{font-family:'DM Serif Display',serif;font-size:26px;color:var(--navy);margin-bottom:8px;}
+.success-sub{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:28px;}
+
+/* ── Auth header ── */
+.auth-h{font-family:'DM Serif Display',serif;font-size:26px;color:var(--navy);margin-bottom:6px;}
+.auth-sub{font-size:13.5px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+
+/* Checkbox */
+.check-row{display:flex;align-items:flex-start;gap:9px;margin-bottom:16px;}
+.check-row input{margin-top:3px;accent-color:var(--navy);width:15px;height:15px;cursor:pointer;flex-shrink:0;}
+.check-row label{font-size:12.5px;color:var(--muted);line-height:1.5;cursor:pointer;}
+.check-row label a{color:var(--steel);font-weight:600;}
+
+/* Obra social autocomplete hint */
+.input-hint-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--steel-lt);color:var(--steel);
+  font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;
+  margin-top:5px;cursor:pointer;
+}
+
+@keyframes slideRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+.slide-in{animation:slideRight .22s ease;}
+
+@media(max-width:820px){
+  .shell{grid-template-columns:1fr;}
+  .left{display:none;}
+  .right{padding:32px 24px;}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="text/babel">
+const { useState, useRef } = React;
+
+// ── Google SVG logo ────────────────────────────
+function GoogleLogo(){
+  return(
+    <svg className="g-logo" viewBox="0 0 20 20" fill="none">
+      <path d="M19.6 10.23c0-.68-.06-1.36-.18-2H10v3.79h5.4a4.6 4.6 0 01-2 3.02v2.5h3.23c1.9-1.75 3-4.33 3-7.31Z" fill="#4285F4"/>
+      <path d="M10 20c2.7 0 4.96-.9 6.62-2.43l-3.23-2.5c-.9.6-2.04.96-3.39.96-2.6 0-4.8-1.76-5.59-4.12H1.08v2.58A10 10 0 0010 20Z" fill="#34A853"/>
+      <path d="M4.41 11.91A5.97 5.97 0 014.1 10c0-.66.11-1.3.31-1.91V5.51H1.08A10 10 0 000 10c0 1.61.38 3.13 1.08 4.49l3.33-2.58Z" fill="#FBBC05"/>
+      <path d="M10 3.96a5.4 5.4 0 013.82 1.5L16.68 2.6A9.6 9.6 0 0010 0a10 10 0 00-8.92 5.51l3.33 2.58C5.2 5.71 7.4 3.96 10 3.96Z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+// ── Password strength ──────────────────────────
+function pwStrength(pw){
+  if(!pw) return {score:0,label:'',color:''};
+  let s=0;
+  if(pw.length>=8) s++;
+  if(/[A-Z]/.test(pw)) s++;
+  if(/[0-9]/.test(pw)) s++;
+  if(/[^A-Za-z0-9]/.test(pw)) s++;
+  const map = [
+    {label:'',color:''},
+    {label:'Débil',  color:'#C0392B'},
+    {label:'Regular',color:'#C07A20'},
+    {label:'Buena',  color:'#7FA98A'},
+    {label:'Fuerte', color:'#2D9E6B'},
+  ];
+  return {score:s,...map[s]};
+}
+
+// ── LOGIN ─────────────────────────────────────
+function LoginForm({ onSwitch }){
+  const [email,setEmail]   = useState('');
+  const [pass,setPass]     = useState('');
+  const [showPw,setShowPw] = useState(false);
+  const [err,setErr]       = useState('');
+
+  function handleSubmit(e){
+    e.preventDefault();
+    if(!email||!pass){ setErr('Completá todos los campos.'); return; }
+    // Simulate login → go to patient
+    window.location.href='Patient.html';
+  }
+
+  return(
+    <div className="slide-in">
+      <div className="auth-h">Bienvenido de nuevo</div>
+      <div className="auth-sub">Ingresá para gestionar tus turnos y sesiones.</div>
+
+      <button className="google-btn" onClick={()=>window.location.href='Patient.html'}>
+        <GoogleLogo/>
+        Continuar con Google
+      </button>
+
+      <div className="or-row">
+        <div className="or-line"></div>
+        <span className="or-text">o ingresá con email</span>
+        <div className="or-line"></div>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label className="form-label">Email</label>
+          <input className={`form-input ${err&&!email?'error':''}`} type="email" placeholder="tu@email.com"
+            value={email} onChange={e=>{setEmail(e.target.value);setErr('');}}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label" style={{display:'flex',justifyContent:'space-between'}}>
+            Contraseña
+            <span style={{color:'var(--steel)',fontWeight:600,cursor:'pointer',fontSize:11.5}}>¿Olvidaste tu contraseña?</span>
+          </label>
+          <div className="input-wrap">
+            <input className={`form-input ${err&&!pass?'error':''}`}
+              type={showPw?'text':'password'} placeholder="••••••••"
+              value={pass} onChange={e=>{setPass(e.target.value);setErr('');}}/>
+            <span className="input-icon" onClick={()=>setShowPw(!showPw)}>{showPw?'🙈':'👁'}</span>
+          </div>
+        </div>
+        {err && <div className="form-error">⚠ {err}</div>}
+        <button type="submit" className="submit-btn" style={{marginTop:16}}>Ingresar</button>
+      </form>
+
+      <div className="terms-text" style={{marginTop:20}}>
+        ¿No tenés cuenta? <a onClick={onSwitch}>Registrate gratis</a>
+      </div>
+    </div>
+  );
+}
+
+// ── REGISTER multi-step ────────────────────────
+const OBRAS = ['OSDE','Swiss Medical','Medicus','Galeno','IOMA','Sancor Salud','Sin obra social','Otra'];
+
+function RegisterForm({ onSwitch }){
+  const [step,   setStep]   = useState(1);
+  const [role,   setRole]   = useState('patient');
+  const [form,   setForm]   = useState({
+    firstName:'', lastName:'', email:'', phone:'',
+    dni:'', obra:'', pass:'', pass2:'', terms:false,
+    // psico fields
+    matricula:'', especialidad:'', modalidad:'',
+  });
+  const [errors, setErrors] = useState({});
+  const [showPw, setShowPw] = useState(false);
+  const [done,   setDone]   = useState(false);
+
+  const pw = pwStrength(form.pass);
+
+  function set(k,v){ setForm(f=>({...f,[k]:v})); setErrors(e=>({...e,[k]:''})); }
+
+  function validateStep1(){
+    const e={};
+    if(!form.firstName.trim()) e.firstName='Requerido';
+    if(!form.lastName.trim())  e.lastName='Requerido';
+    if(!form.email.match(/^[^@]+@[^@]+\.[^@]+$/)) e.email='Email inválido';
+    if(form.phone && !form.phone.match(/^[\d\s\+\-]{7,}$/)) e.phone='Teléfono inválido';
+    setErrors(e); return Object.keys(e).length===0;
+  }
+
+  function validateStep2(){
+    const e={};
+    if(role==='patient'){
+      if(!form.dni.trim()) e.dni='Requerido';
+    } else {
+      if(!form.matricula.trim()) e.matricula='Requerido';
+      if(!form.especialidad.trim()) e.especialidad='Requerido';
+    }
+    setErrors(e); return Object.keys(e).length===0;
+  }
+
+  function validateStep3(){
+    const e={};
+    if(form.pass.length<8) e.pass='Mínimo 8 caracteres';
+    if(form.pass!==form.pass2) e.pass2='Las contraseñas no coinciden';
+    if(!form.terms) e.terms='Debés aceptar los términos';
+    setErrors(e); return Object.keys(e).length===0;
+  }
+
+  function next(){
+    if(step===1 && validateStep1()) setStep(2);
+    if(step===2 && validateStep2()) setStep(3);
+    if(step===3 && validateStep3()) setDone(true);
+  }
+
+  const totalSteps = 3;
+
+  if(done) return(
+    <div className="success-box slide-in">
+      <div className="success-anim">🎉</div>
+      <div className="success-h">¡Cuenta creada!</div>
+      <div className="success-sub">
+        Te enviamos un email a <strong>{form.email}</strong> para confirmar tu cuenta.<br/>
+        Una vez verificado, ya podés empezar a usar PsicoLink.
+      </div>
+      <button className="submit-btn" onClick={()=>window.location.href='Patient.html'}>
+        Ir a mi panel
+      </button>
+      <div style={{marginTop:16}}>
+        <button className="google-btn" style={{marginBottom:0}}>
+          <GoogleLogo/> Vincular cuenta de Google
+        </button>
+      </div>
+    </div>
+  );
+
+  return(
+    <div className="slide-in" key={step}>
+      {/* Steps */}
+      <div className="steps-mini">
+        {[1,2,3].map(i=>(
+          <div key={i} className={`step-dot ${i<step?'done':i===step?'active':''}`}></div>
+        ))}
+        <span className="steps-label">Paso {step} de {totalSteps}</span>
+      </div>
+
+      {step===1 && <>
+        <div className="auth-h">Crear cuenta</div>
+        <div className="auth-sub">¿Cómo vas a usar PsicoLink?</div>
+
+        <div className="role-grid" style={{marginBottom:22}}>
+          {[
+            {id:'patient', icon:'🧠', label:'Paciente', sub:'Buscá y agendá con tu psicólogo'},
+            {id:'psico',   icon:'💼', label:'Psicólogo', sub:'Gestioná tu agenda y pacientes'},
+          ].map(r=>(
+            <div key={r.id} className={`role-card ${role===r.id?'selected':''}`} onClick={()=>setRole(r.id)}>
+              <div className="role-icon">{r.icon}</div>
+              <div className="role-label">{r.label}</div>
+              <div className="role-sub">{r.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="or-row" style={{margin:'0 0 16px'}}>
+          <div className="or-line"></div>
+          <span className="or-text">o registrate con Google</span>
+          <div className="or-line"></div>
+        </div>
+        <button className="google-btn" style={{marginBottom:20}} onClick={()=>setDone(true)}>
+          <GoogleLogo/>
+          Registrarse con Google
+        </button>
+        <div className="or-row" style={{margin:'0 0 16px'}}>
+          <div className="or-line"></div>
+          <span className="or-text">completá tus datos</span>
+          <div className="or-line"></div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">Nombre</label>
+            <input className={`form-input ${errors.firstName?'error':''}`} placeholder="Ana"
+              value={form.firstName} onChange={e=>set('firstName',e.target.value)}/>
+            {errors.firstName && <div className="form-error">⚠ {errors.firstName}</div>}
+          </div>
+          <div className="form-group">
+            <label className="form-label">Apellido</label>
+            <input className={`form-input ${errors.lastName?'error':''}`} placeholder="García"
+              value={form.lastName} onChange={e=>set('lastName',e.target.value)}/>
+            {errors.lastName && <div className="form-error">⚠ {errors.lastName}</div>}
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Email</label>
+          <input className={`form-input ${errors.email?'error':''}`} type="email" placeholder="tu@email.com"
+            value={form.email} onChange={e=>set('email',e.target.value)}/>
+          {errors.email && <div className="form-error">⚠ {errors.email}</div>}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Teléfono <span style={{color:'var(--muted)',fontWeight:400}}>(opcional)</span></label>
+          <input className={`form-input ${errors.phone?'error':''}`} placeholder="+54 11 0000-0000"
+            value={form.phone} onChange={e=>set('phone',e.target.value)}/>
+          {errors.phone && <div className="form-error">⚠ {errors.phone}</div>}
+        </div>
+      </>}
+
+      {step===2 && role==='patient' && <>
+        <div className="auth-h">Datos personales</div>
+        <div className="auth-sub">Usamos estos datos para coordinar con tu psicólogo.</div>
+        <div className="form-group">
+          <label className="form-label">DNI</label>
+          <input className={`form-input ${errors.dni?'error':''}`} placeholder="38.492.101"
+            value={form.dni} onChange={e=>set('dni',e.target.value)}/>
+          {errors.dni && <div className="form-error">⚠ {errors.dni}</div>}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Fecha de nacimiento</label>
+          <input className="form-input" type="date" value={form.bday||''}
+            onChange={e=>set('bday',e.target.value)}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Obra social</label>
+          <select className="form-input" value={form.obra} onChange={e=>set('obra',e.target.value)}
+            style={{cursor:'pointer'}}>
+            <option value="">Seleccioná…</option>
+            {OBRAS.map(o=><option key={o} value={o}>{o}</option>)}
+          </select>
+          {form.obra && form.obra!=='Sin obra social' &&
+            <span className="input-hint-chip">✓ Cobertura activa</span>}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Género <span style={{color:'var(--muted)',fontWeight:400}}>(opcional)</span></label>
+          <select className="form-input" value={form.genero||''} onChange={e=>set('genero',e.target.value)}
+            style={{cursor:'pointer'}}>
+            <option value="">Prefiero no indicar</option>
+            <option>Femenino</option>
+            <option>Masculino</option>
+            <option>No binario</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </>}
+
+      {step===2 && role==='psico' && <>
+        <div className="auth-h">Datos profesionales</div>
+        <div className="auth-sub">Verificaremos tu matrícula para habilitarte en la plataforma.</div>
+        <div className="form-group">
+          <label className="form-label">Número de matrícula</label>
+          <input className={`form-input ${errors.matricula?'error':''}`} placeholder="MN 00000"
+            value={form.matricula} onChange={e=>set('matricula',e.target.value)}/>
+          {errors.matricula && <div className="form-error">⚠ {errors.matricula}</div>}
+          <div className="form-hint">Matrícula nacional o provincial habilitante.</div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Especialidad principal</label>
+          <select className={`form-input ${errors.especialidad?'error':''}`}
+            value={form.especialidad} onChange={e=>set('especialidad',e.target.value)} style={{cursor:'pointer'}}>
+            <option value="">Seleccioná…</option>
+            {['Psicología clínica','TCC','Psicoanálisis','Psicología infantil','Terapia de pareja','Neuropsicología','Otra'].map(o=><option key={o}>{o}</option>)}
+          </select>
+          {errors.especialidad && <div className="form-error">⚠ {errors.especialidad}</div>}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Modalidad de atención</label>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:2}}>
+            {['Online','Presencial','Ambas'].map(m=>(
+              <div key={m} onClick={()=>set('modalidad',m)}
+                style={{
+                  padding:'8px 16px',borderRadius:8,cursor:'pointer',
+                  border:`1.5px solid ${form.modalidad===m?'var(--navy)':'var(--border)'}`,
+                  background:form.modalidad===m?'var(--navy-lt)':'var(--surface)',
+                  fontSize:13,fontWeight:600,
+                  color:form.modalidad===m?'var(--navy)':'var(--muted)',
+                  transition:'all .15s',
+                }}>
+                {m}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Valor de la sesión (ARS)</label>
+          <input className="form-input" placeholder="$4.500" value={form.precio||''}
+            onChange={e=>set('precio',e.target.value)}/>
+          <div className="form-hint">Podés modificarlo más adelante desde tu perfil.</div>
+        </div>
+      </>}
+
+      {step===3 && <>
+        <div className="auth-h">Seguridad</div>
+        <div className="auth-sub">Elegí una contraseña segura para proteger tu cuenta.</div>
+        <div className="form-group">
+          <label className="form-label">Contraseña</label>
+          <div className="input-wrap">
+            <input className={`form-input ${errors.pass?'error':''}`}
+              type={showPw?'text':'password'} placeholder="Mínimo 8 caracteres"
+              value={form.pass} onChange={e=>set('pass',e.target.value)}/>
+            <span className="input-icon" onClick={()=>setShowPw(!showPw)}>{showPw?'🙈':'👁'}</span>
+          </div>
+          {form.pass && <>
+            <div className="strength-bar">
+              <div className="strength-fill" style={{width:`${pw.score*25}%`,background:pw.color}}></div>
+            </div>
+            <div className="form-hint" style={{color:pw.color}}>{pw.label}</div>
+          </>}
+          {errors.pass && <div className="form-error">⚠ {errors.pass}</div>}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Confirmar contraseña</label>
+          <div className="input-wrap">
+            <input className={`form-input ${errors.pass2?'error':''}`}
+              type={showPw?'text':'password'} placeholder="Repetí la contraseña"
+              value={form.pass2} onChange={e=>set('pass2',e.target.value)}/>
+            {form.pass2 && form.pass===form.pass2 &&
+              <span className="input-icon" style={{color:'var(--sage)'}}>✓</span>}
+          </div>
+          {errors.pass2 && <div className="form-error">⚠ {errors.pass2}</div>}
+        </div>
+        <div className="check-row">
+          <input type="checkbox" id="terms" checked={form.terms} onChange={e=>set('terms',e.target.checked)}/>
+          <label htmlFor="terms">
+            Acepto los <a>Términos y condiciones</a> y la <a>Política de privacidad</a> de PsicoLink.
+          </label>
+        </div>
+        {errors.terms && <div className="form-error" style={{marginBottom:8}}>⚠ {errors.terms}</div>}
+      </>}
+
+      {/* Navigation */}
+      <div style={{display:'flex',gap:10,marginTop:20}}>
+        {step>1 &&
+          <button className="submit-btn" style={{background:'transparent',color:'var(--muted)',border:'1.5px solid var(--border)',flex:1}}
+            onClick={()=>setStep(step-1)}>
+            ← Atrás
+          </button>}
+        <button className="submit-btn" style={{flex:2}} onClick={next}>
+          {step<3 ? 'Continuar →' : 'Crear cuenta'}
+        </button>
+      </div>
+
+      <div className="terms-text" style={{marginTop:16}}>
+        ¿Ya tenés cuenta? <a onClick={onSwitch}>Ingresá aquí</a>
+      </div>
+    </div>
+  );
+}
+
+// ── APP ────────────────────────────────────────
+function App(){
+  const [tab, setTab] = useState('login'); // 'login' | 'register'
+
+  const features = [
+    {icon:'📅', label:'Agendá en segundos',       sub:'Turnos online en tiempo real'},
+    {icon:'💳', label:'Pago seguro integrado',     sub:'Con tarjeta o Mercado Pago'},
+    {icon:'📹', label:'Sesiones online',           sub:'Videollamada directa desde la app'},
+    {icon:'🔔', label:'Recordatorios automáticos', sub:'Por email y WhatsApp'},
+  ];
+
+  return(
+    <div className="shell">
+      {/* Left */}
+      <div className="left">
+        <div className="left-logo">
+          <img className="logo-img" src="logo_final.png" alt="PsicoLink" />
+          <span className="logo-text">PsicoLink</span>
+        </div>
+        <div className="left-body">
+          <div className="left-tag">
+            <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="#7FA98A"/></svg>
+            Plataforma de salud mental
+          </div>
+          <div className="left-h">Tu bienestar,<br/>a un turno<br/>de distancia.</div>
+          <div className="left-sub">
+            Conectamos pacientes con psicólogos de confianza. Agendá, pagá y asistí a tus sesiones desde un solo lugar.
+          </div>
+          <div className="feature-list">
+            {features.map(f=>(
+              <div className="feature" key={f.label}>
+                <div className="feature-icon">{f.icon}</div>
+                <div className="feature-text">
+                  <strong>{f.label}</strong>
+                  <span>{f.sub}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="left-footer">
+          <span>© 2026 PsicoLink</span>
+          <a>Privacidad</a>
+          <a>Términos</a>
+          <a>Ayuda</a>
+        </div>
+      </div>
+
+      {/* Right */}
+      <div className="right">
+        <div className="auth-box">
+          <div className="auth-tab-row">
+            <button className={`auth-tab ${tab==='login'?'active':''}`}    onClick={()=>setTab('login')}>Ingresar</button>
+            <button className={`auth-tab ${tab==='register'?'active':''}`} onClick={()=>setTab('register')}>Registrarse</button>
+          </div>
+          {tab==='login'
+            ? <LoginForm    onSwitch={()=>setTab('register')}/>
+            : <RegisterForm onSwitch={()=>setTab('login')}/>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const rootEl = document.createElement('div');
+document.body.appendChild(rootEl);
+ReactDOM.createRoot(rootEl).render(<App/>);
+</script>
+</body>
+</html>

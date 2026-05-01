@@ -1,13 +1,23 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import AppointmentStatusActions from "@/components/AppointmentStatusActions";
+import PsychologistAppointmentScheduler from "@/components/PsychologistAppointmentScheduler";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   pending_payment: { label: "Pendiente de pago", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   confirmed:       { label: "Confirmado",         cls: "bg-green-50 text-green-700 border-green-200" },
   cancelled:       { label: "Cancelado",           cls: "bg-red-50 text-red-700 border-red-200" },
   completed:       { label: "Completado",          cls: "bg-gray-100 text-gray-600 border-gray-200" },
+  PENDING: { label: "Pendiente", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  CONFIRMED: { label: "Confirmado", cls: "bg-green-50 text-green-700 border-green-200" },
+  CANCELLED: { label: "Cancelado", cls: "bg-red-50 text-red-700 border-red-200" },
+  COMPLETED: { label: "Completado", cls: "bg-gray-100 text-gray-600 border-gray-200" },
 };
+
+const PENDING_STATUSES = ["pending_payment", "pending", "PENDING"];
+const CONFIRMED_STATUSES = ["confirmed", "CONFIRMED"];
+const COMPLETED_STATUSES = ["completed", "COMPLETED"];
 
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] ?? { label: status, cls: "bg-gray-100 text-gray-500 border-gray-200" };
@@ -26,12 +36,14 @@ export default async function TurnosPage() {
 
   const [upcoming, past] = await Promise.all([
     prisma.appointment.findMany({
-      where: { psychologistId: session.user.id, scheduledAt: { gte: now } },
-      orderBy: { scheduledAt: "asc" },
+      where: { psychologistId: session.user.id, date: { gte: now } },
+      include: { patient: { select: { name: true, email: true } } },
+      orderBy: { date: "asc" },
     }),
     prisma.appointment.findMany({
-      where: { psychologistId: session.user.id, scheduledAt: { lt: now } },
-      orderBy: { scheduledAt: "desc" },
+      where: { psychologistId: session.user.id, date: { lt: now } },
+      include: { patient: { select: { name: true, email: true } } },
+      orderBy: { date: "desc" },
       take: 20,
     }),
   ]);
@@ -53,6 +65,8 @@ export default async function TurnosPage() {
           <h1 className="text-xl font-bold text-gray-900">Mis turnos</h1>
           <p className="text-sm text-gray-500 mt-0.5">Gestión de citas reservadas por pacientes</p>
         </div>
+        <div className="flex items-center gap-3">
+          <PsychologistAppointmentScheduler />
         {profile?.slug && (
           <a
             href={`/p/${profile.slug}`}
@@ -64,14 +78,15 @@ export default async function TurnosPage() {
             Ver mi perfil público
           </a>
         )}
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Próximos", value: upcoming.filter(a => a.status === "confirmed").length, color: "text-indigo-600" },
-          { label: "Pendientes de pago", value: upcoming.filter(a => a.status === "pending_payment").length, color: "text-amber-600" },
-          { label: "Completados", value: past.filter(a => a.status === "completed").length, color: "text-green-600" },
+          { label: "Próximos", value: upcoming.filter(a => CONFIRMED_STATUSES.includes(a.status)).length, color: "text-indigo-600" },
+          { label: "Pendientes", value: upcoming.filter(a => PENDING_STATUSES.includes(a.status)).length, color: "text-amber-600" },
+          { label: "Completados", value: past.filter(a => COMPLETED_STATUSES.includes(a.status)).length, color: "text-green-600" },
           { label: "Total histórico", value: upcoming.length + past.length, color: "text-gray-700" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
@@ -99,23 +114,24 @@ export default async function TurnosPage() {
             {upcoming.map((apt) => (
               <div key={apt.id} className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-shrink-0 text-center bg-indigo-50 rounded-xl px-4 py-2 min-w-[90px]">
-                  <p className="text-xs text-indigo-500 font-medium">{fmt(apt.scheduledAt).split(",")[0]}</p>
-                  <p className="text-lg font-bold text-indigo-700">{fmtTime(apt.scheduledAt)}</p>
-                  <p className="text-xs text-indigo-400">{apt.durationMinutes} min</p>
+                  <p className="text-xs text-indigo-500 font-medium">{fmt(apt.date).split(",")[0]}</p>
+                  <p className="text-lg font-bold text-indigo-700">{fmtTime(apt.date)}</p>
+                  <p className="text-xs text-indigo-400">{apt.duration} min</p>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-gray-900">{apt.patientName}</p>
+                    <p className="font-semibold text-gray-900">{apt.patient?.name ?? apt.patientName ?? "Paciente"}</p>
                     <StatusBadge status={apt.status} />
                   </div>
-                  <p className="text-sm text-gray-500">{apt.patientEmail}</p>
+                  <p className="text-sm text-gray-500">{apt.patient?.email ?? apt.patientEmail ?? "Sin email registrado"}</p>
                   {apt.patientPhone && <p className="text-xs text-gray-400">{apt.patientPhone}</p>}
-                  {apt.notes && <p className="text-xs text-gray-500 mt-1 italic line-clamp-1">"{apt.notes}"</p>}
+                  {apt.notes && <p className="text-xs text-gray-500 mt-1 italic line-clamp-1">&ldquo;{apt.notes}&rdquo;</p>}
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold text-gray-800">{apt.currency} {apt.amount.toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{fmt(apt.scheduledAt)}</p>
+                  <p className="text-sm font-bold text-gray-800">{apt.currency ?? "ARS"} {(apt.amount ?? 0).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{fmt(apt.date)}</p>
                 </div>
+                <AppointmentStatusActions appointmentId={apt.id} status={apt.status} />
               </div>
             ))}
           </div>
@@ -130,18 +146,18 @@ export default async function TurnosPage() {
             {past.map((apt) => (
               <div key={apt.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col sm:flex-row sm:items-center gap-3 opacity-75">
                 <div className="flex-shrink-0 text-center bg-gray-50 rounded-xl px-4 py-2 min-w-[90px]">
-                  <p className="text-xs text-gray-400">{fmt(apt.scheduledAt).split(",")[0]}</p>
-                  <p className="text-lg font-bold text-gray-500">{fmtTime(apt.scheduledAt)}</p>
+                  <p className="text-xs text-gray-400">{fmt(apt.date).split(",")[0]}</p>
+                  <p className="text-lg font-bold text-gray-500">{fmtTime(apt.date)}</p>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-gray-700">{apt.patientName}</p>
+                    <p className="font-medium text-gray-700">{apt.patient?.name ?? apt.patientName ?? "Paciente"}</p>
                     <StatusBadge status={apt.status} />
                   </div>
-                  <p className="text-sm text-gray-400">{apt.patientEmail}</p>
+                  <p className="text-sm text-gray-400">{apt.patient?.email ?? apt.patientEmail ?? "Sin email registrado"}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-semibold text-gray-600">{apt.currency} {apt.amount.toLocaleString()}</p>
+                  <p className="text-sm font-semibold text-gray-600">{apt.currency ?? "ARS"} {(apt.amount ?? 0).toLocaleString()}</p>
                 </div>
               </div>
             ))}

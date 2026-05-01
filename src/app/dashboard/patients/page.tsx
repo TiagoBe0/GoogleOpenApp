@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { signOut } from "@/auth";
 import PatientsList from "@/components/PatientsList";
+import Image from "next/image";
 
 export default async function PatientsPage() {
   const session = await auth();
@@ -18,12 +19,8 @@ export default async function PatientsPage() {
       <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col z-10">
         <div className="px-6 py-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <span className="font-bold text-gray-900">GoogleOpenApp</span>
+            <Image src="/logo_final.png" alt="Mi Terapia" width={38} height={38} className="h-[38px] w-[38px] rounded-lg object-cover" />
+            <span className="font-bold text-gray-900">Mi Terapia</span>
           </div>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-1">

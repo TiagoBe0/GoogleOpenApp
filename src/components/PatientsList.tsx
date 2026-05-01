@@ -19,6 +19,13 @@ export default function PatientsList() {
   const [success, setSuccess] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [appointmentPatient, setAppointmentPatient] = useState<Patient | null>(null);
+  const [appointmentDate, setAppointmentDate] = useState("");
+  const [appointmentTime, setAppointmentTime] = useState("");
+  const [appointmentDuration, setAppointmentDuration] = useState("50");
+  const [appointmentNotes, setAppointmentNotes] = useState("");
+  const [scheduling, setScheduling] = useState(false);
+  const [appointmentError, setAppointmentError] = useState("");
 
   async function fetchPatients() {
     setLoading(true);
@@ -84,6 +91,52 @@ export default function PatientsList() {
       fetchPatients();
     } finally {
       setRemovingId(null);
+    }
+  }
+
+  function openAppointmentModal(patient: Patient) {
+    setAppointmentPatient(patient);
+    setAppointmentDate("");
+    setAppointmentTime("");
+    setAppointmentDuration("50");
+    setAppointmentNotes("");
+    setAppointmentError("");
+    setSuccess("");
+  }
+
+  async function handleScheduleAppointment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!appointmentPatient) return;
+
+    setScheduling(true);
+    setAppointmentError("");
+    setSuccess("");
+
+    try {
+      const date = new Date(`${appointmentDate}T${appointmentTime}`);
+      const res = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: appointmentPatient.id,
+          date: date.toISOString(),
+          duration: Number(appointmentDuration),
+          notes: appointmentNotes.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAppointmentError(data.error ?? "No se pudo agendar el turno");
+        return;
+      }
+
+      setSuccess(`Turno agendado para ${appointmentPatient.name || appointmentPatient.email}`);
+      setAppointmentPatient(null);
+    } catch {
+      setAppointmentError("Revisá la fecha y hora e intentá nuevamente.");
+    } finally {
+      setScheduling(false);
     }
   }
 
@@ -159,6 +212,12 @@ export default function PatientsList() {
                 <p className="text-sm text-gray-400 truncate">{p.email}</p>
               </div>
               <button
+                onClick={() => openAppointmentModal(p)}
+                className="text-xs text-indigo-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors flex-shrink-0"
+              >
+                Agendar turno
+              </button>
+              <button
                 onClick={() => handleRemove(p.id)}
                 disabled={removingId === p.id}
                 className="text-xs text-gray-400 hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
@@ -218,6 +277,97 @@ export default function PatientsList() {
                   className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium transition-colors"
                 >
                   {linking ? "Vinculando..." : "Vincular"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {appointmentPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="font-semibold text-gray-900">Agendar turno</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{appointmentPatient.name || appointmentPatient.email}</p>
+              </div>
+              <button onClick={() => setAppointmentPatient(null)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleScheduleAppointment} className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1.5">Fecha</span>
+                  <input
+                    type="date"
+                    required
+                    value={appointmentDate}
+                    onChange={(e) => { setAppointmentDate(e.target.value); setAppointmentError(""); }}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1.5">Hora</span>
+                  <input
+                    type="time"
+                    required
+                    value={appointmentTime}
+                    onChange={(e) => { setAppointmentTime(e.target.value); setAppointmentError(""); }}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1.5">Duración</span>
+                <select
+                  value={appointmentDuration}
+                  onChange={(e) => setAppointmentDuration(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="30">30 min</option>
+                  <option value="45">45 min</option>
+                  <option value="50">50 min</option>
+                  <option value="60">60 min</option>
+                  <option value="90">90 min</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1.5">Notas</span>
+                <textarea
+                  rows={3}
+                  value={appointmentNotes}
+                  onChange={(e) => setAppointmentNotes(e.target.value)}
+                  placeholder="Motivo, modalidad o recordatorio interno..."
+                  className="w-full resize-none px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </label>
+
+              {appointmentError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600">
+                  {appointmentError}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAppointmentPatient(null)}
+                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={scheduling}
+                  className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium transition-colors"
+                >
+                  {scheduling ? "Agendando..." : "Agendar"}
                 </button>
               </div>
             </form>

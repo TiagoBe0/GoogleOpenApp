@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 
-const NAV_ITEMS = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: ReactNode;
+  badge?: string;
+};
+
+const NAV_ITEMS: NavItem[] = [
   {
     href: "/dashboard",
     label: "Inicio",
@@ -43,13 +51,26 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function DashboardNav() {
+const ADMIN_NAV_ITEMS: NavItem[] = [
+  {
+    href: "/dashboard/admin/users",
+    label: "Usuarios",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
+];
+
+export default function DashboardNav({ role }: { role?: string }) {
   const pathname = usePathname();
+  const items = role === "ADMIN" ? ADMIN_NAV_ITEMS : NAV_ITEMS;
 
   return (
     <>
       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Menú</p>
-      {NAV_ITEMS.map(({ href, label, icon, badge }) => {
+      {items.map(({ href, label, icon, badge }) => {
         const active = pathname === href;
         return (
           <Link

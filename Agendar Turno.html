@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PsicoLink · Agendar Turno</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:     #2D4270;
+  --navy-dk:  #1F3060;
+  --steel:    #8AACC8;
+  --sage:     #7FA98A;
+  --steel-lt: #D8EAF7;
+  --sage-lt:  #D0E8D8;
+  --bg:       #F4F6FA;
+  --surface:  #FFFFFF;
+  --text:     #1C2940;
+  --muted:    #8A96A8;
+  --border:   #E2E8F0;
+  --danger:   #C0392B;
+  --danger-lt:#FDF0EE;
+  --warn:     #C07A20;
+  --warn-lt:  #FEF4E6;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.logo-mark {
+  width: 30px; height: 30px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+}
+.logo-mark span { border-radius: 3px; }
+.logo-mark span:nth-child(1) { background: var(--navy); }
+.logo-mark span:nth-child(2) { background: var(--steel); }
+.logo-mark span:nth-child(3) { background: var(--sage); }
+.logo-mark span:nth-child(4) { background: var(--steel-lt); }
+.logo-img { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.logo-text { font-family:'DM Serif Display',serif; font-size:20px; color:var(--navy); }
+
+/* ── Steps bar ── */
+.steps-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  flex-shrink: 0;
+}
+.step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 24px 14px 0;
+  font-size: 13px; font-weight: 500;
+  color: var(--muted);
+  position: relative;
+}
+.step + .step { padding-left: 24px; }
+.step + .step::before {
+  content:''; position:absolute; left:0; top:50%;
+  width:1px; height:20px; background:var(--border); transform:translateY(-50%);
+}
+.step.active { color: var(--navy); }
+.step.done   { color: var(--sage); }
+.step-num {
+  width:22px; height:22px; border-radius:50%;
+  border:1.5px solid currentColor;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; flex-shrink:0;
+}
+.step.active .step-num { background:var(--navy); color:#fff; border-color:var(--navy); }
+.step.done   .step-num { background:var(--sage); color:#fff; border-color:var(--sage); }
+
+/* ── Main ── */
+.main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 20px 100px;
+  gap: 20px;
+}
+
+/* ── Psico card ── */
+.psico-card {
+  background: var(--surface);
+  border-radius: 16px; border: 1px solid var(--border);
+  padding: 24px; width: 240px; flex-shrink: 0;
+  position: sticky; top: 32px;
+}
+.psico-avatar {
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--steel-lt); margin-bottom: 12px;
+  display:flex; align-items:center; justify-content:center;
+}
+.psico-name { font-family:'DM Serif Display',serif; font-size:16px; color:var(--navy); margin-bottom:2px; }
+.psico-spec { font-size:11.5px; color:var(--muted); margin-bottom:14px; }
+.psico-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--sage-lt); color:var(--sage);
+  font-size:11px; font-weight:600; padding:4px 10px;
+  border-radius:20px; margin-bottom:14px;
+}
+.info-row {
+  display:flex; gap:6px; align-items:center;
+  font-size:12px; color:var(--muted); margin-bottom:7px;
+}
+.divider { height:1px; background:var(--border); margin:14px 0; }
+.summary-block { background:var(--bg); border-radius:10px; padding:12px 14px; }
+.sum-label { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:5px; }
+.sum-val { color:var(--navy); font-weight:600; font-size:13.5px; }
+.sum-val.empty { color:var(--muted); font-weight:400; font-style:italic; font-size:12px; }
+
+/* ── Calendar panel ── */
+.cal-panel {
+  background: var(--surface);
+  border-radius: 16px; border: 1px solid var(--border);
+  padding: 28px;
+  flex-shrink: 0;
+  width: 520px;
+}
+.cal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom: 22px;
+}
+.cal-month { font-family:'DM Serif Display',serif; font-size:22px; color:var(--navy); }
+.cal-nav { display:flex; gap:6px; }
+.cal-nav button {
+  width:36px; height:36px; border-radius:9px;
+  border:1px solid var(--border); background:var(--bg);
+  color:var(--navy); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .15s;
+}
+.cal-nav button:hover:not(:disabled) { background:var(--steel-lt); }
+.cal-nav button:disabled { opacity:.3; cursor:default; }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+.cal-dow {
+  font-size:11px; font-weight:600; color:var(--muted);
+  text-align:center; padding-bottom:12px;
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; font-weight:500;
+  cursor:default; transition:all .15s;
+  position:relative; border:2px solid transparent;
+}
+.cal-day.past { color:var(--border); }
+.cal-day.unavail { color:#C8D0DC; }
+.cal-day.avail {
+  color:var(--navy); background:var(--bg); cursor:pointer;
+}
+.cal-day.avail:hover { background:var(--steel-lt); border-color:var(--steel); }
+.cal-day.avail::after {
+  content:''; position:absolute; bottom:6px;
+  width:5px; height:5px; border-radius:50%;
+  background:var(--sage);
+}
+.cal-day.selected { background:var(--navy) !important; color:#fff !important; border-color:var(--navy) !important; }
+.cal-day.selected::after { background:#fff; opacity:.6; }
+.cal-day.today:not(.selected) { border-color:var(--steel); }
+
+.cal-legend {
+  display:flex; gap:18px; margin-top:18px; flex-wrap:wrap;
+}
+.leg { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
+.leg-dot { width:8px; height:8px; border-radius:50%; }
+
+/* ── Time panel ── */
+.time-panel {
+  background:var(--surface);
+  border-radius:16px; border:1px solid var(--border);
+  width:210px; flex-shrink:0;
+  display:flex; flex-direction:column;
+  max-height:610px; overflow:hidden;
+}
+.tp-head {
+  padding:18px 18px 12px; border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.tp-title { font-family:'DM Serif Display',serif; font-size:15px; color:var(--navy); margin-bottom:2px; }
+.tp-date  { font-size:11.5px; color:var(--muted); }
+.tp-scroll { overflow-y:auto; flex:1; padding:12px 12px 16px; scrollbar-width:thin; }
+.tp-section { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin:10px 0 6px; }
+
+.timeline { position:relative; padding-left:32px; }
+.tl-line { position:absolute; left:12px; top:4px; bottom:4px; width:2px; background:var(--border); border-radius:2px; }
+
+.slot {
+  position:relative; margin-bottom:6px; cursor:pointer;
+}
+.slot-dot {
+  position:absolute; left:-24px; top:50%; transform:translateY(-50%);
+  width:10px; height:10px; border-radius:50%;
+  border:2px solid var(--border); background:var(--surface);
+  transition:all .15s;
+}
+.slot:hover:not(.booked) .slot-dot { border-color:var(--steel); background:var(--steel-lt); }
+.slot.sel .slot-dot { border-color:var(--navy); background:var(--navy); }
+.slot.booked .slot-dot { cursor:not-allowed; }
+
+.slot-card {
+  border-radius:9px; border:1.5px solid var(--border);
+  padding:9px 11px; background:var(--bg); transition:all .15s;
+}
+.slot:hover:not(.booked) .slot-card { border-color:var(--steel); background:var(--steel-lt); }
+.slot.sel .slot-card { border-color:var(--navy); background:#EEF2FA; }
+.slot.booked { cursor:not-allowed; opacity:.42; }
+
+.slot-range { font-size:12.5px; font-weight:600; color:var(--navy); display:flex; align-items:center; gap:4px; }
+.slot-range .arr { color:var(--muted); font-weight:400; font-size:11px; }
+.slot-range .end { color:var(--muted); font-weight:400; }
+.slot-bar { height:3px; border-radius:2px; margin-top:6px; background:var(--border); overflow:hidden; }
+.slot-bar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg, var(--steel), var(--sage)); }
+.slot.sel .slot-bar-fill { background:linear-gradient(90deg, var(--navy), var(--steel)); }
+.slot.booked .slot-bar-fill { background:var(--border); }
+.slot-tag {
+  display:inline-block; font-size:10px; font-weight:600;
+  padding:2px 7px; border-radius:20px; margin-top:5px;
+}
+.tag-online    { background:var(--sage-lt); color:var(--sage); }
+.tag-presencial{ background:var(--steel-lt); color:var(--steel); }
+.tag-ocupado   { background:var(--border); color:var(--muted); }
+
+.tp-empty {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:32px 18px; text-align:center;
+}
+.tp-empty svg { opacity:.25; margin-bottom:12px; }
+.tp-empty p { font-size:12.5px; color:var(--muted); line-height:1.6; }
+
+/* ── Bottom bar ── */
+.bottom-bar {
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--surface); border-top:1px solid var(--border);
+  padding:14px 32px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  z-index:100;
+}
+.bar-hint { font-size:13px; color:var(--muted); }
+.bar-summary strong { font-weight:600; font-size:13px; color:var(--navy); }
+.bar-summary span   { display:block; font-size:11.5px; color:var(--muted); margin-top:1px; }
+
+.btn {
+  padding:11px 24px; border-radius:10px; border:none;
+  font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+  cursor:pointer; transition:all .18s; white-space:nowrap;
+}
+.btn-primary { background:var(--navy); color:#fff; }
+.btn-primary:hover:not(:disabled) { background:var(--navy-dk); transform:translateY(-1px); box-shadow:0 4px 16px rgba(45,66,112,.25); }
+.btn-primary:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; transform:none; box-shadow:none; }
+.btn-ghost { background:transparent; color:var(--muted); border:1.5px solid var(--border); }
+.btn-ghost:hover { border-color:var(--steel); color:var(--navy); }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-danger:hover { background:#A93226; transform:translateY(-1px); }
+
+/* ── MODAL overlay ── */
+.overlay {
+  position:fixed; inset:0;
+  background:rgba(28,41,64,.55);
+  backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center;
+  z-index:500;
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+.modal {
+  background:var(--surface);
+  border-radius:20px; border:1px solid var(--border);
+  width:100%; max-width:440px;
+  padding:32px;
+  box-shadow:0 24px 60px rgba(0,0,0,.18);
+  animation:slideUp .25s ease;
+  position:relative;
+}
+.modal-close {
+  position:absolute; top:16px; right:16px;
+  width:30px; height:30px; border-radius:8px;
+  border:1px solid var(--border); background:var(--bg);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color:var(--muted); font-size:16px;
+  transition:background .15s;
+}
+.modal-close:hover { background:var(--border); }
+
+.modal-icon {
+  width:60px; height:60px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 18px; font-size:26px;
+}
+.icon-pay     { background:var(--steel-lt); }
+.icon-ok      { background:var(--sage-lt); }
+.icon-err     { background:var(--danger-lt); }
+.icon-warn    { background:var(--warn-lt); }
+
+.modal-title {
+  font-family:'DM Serif Display',serif;
+  font-size:22px; color:var(--navy);
+  text-align:center; margin-bottom:6px;
+}
+.modal-sub {
+  font-size:13px; color:var(--muted);
+  text-align:center; line-height:1.6; margin-bottom:24px;
+}
+
+/* ── Payment form ── */
+.session-recap {
+  background:var(--bg); border-radius:12px;
+  padding:14px 16px; margin-bottom:20px;
+  display:flex; align-items:center; gap:12px;
+}
+.recap-dot { width:10px; height:10px; border-radius:50%; background:var(--sage); flex-shrink:0; }
+.recap-info { flex:1; }
+.recap-info strong { font-size:13px; font-weight:600; color:var(--navy); display:block; }
+.recap-info span   { font-size:11.5px; color:var(--muted); }
+.recap-price { font-family:'DM Serif Display',serif; font-size:20px; color:var(--navy); }
+
+.form-group { margin-bottom:14px; }
+.form-label { font-size:11.5px; font-weight:600; color:var(--text); margin-bottom:5px; display:block; letter-spacing:.2px; }
+.form-input {
+  width:100%; padding:11px 13px;
+  border:1.5px solid var(--border); border-radius:9px;
+  font-family:'DM Sans',sans-serif; font-size:14px;
+  color:var(--text); background:var(--surface);
+  transition:border-color .15s;
+  outline:none;
+}
+.form-input:focus { border-color:var(--steel); box-shadow:0 0 0 3px rgba(138,172,200,.15); }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+.card-icons { display:flex; gap:6px; margin-bottom:14px; }
+.card-icon {
+  height:26px; padding:0 8px;
+  border:1px solid var(--border); border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; color:var(--muted);
+  background:var(--bg);
+}
+.card-icon.visa { color:#1A1F71; }
+.card-icon.mc { color:#EB001B; }
+
+.secure-note {
+  display:flex; align-items:center; gap:6px;
+  font-size:11px; color:var(--muted); margin-top:12px;
+  justify-content:center;
+}
+
+/* ── Status modals ── */
+.status-detail {
+  background:var(--bg); border-radius:12px;
+  padding:14px 16px; margin-bottom:20px;
+}
+.status-row { display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px; }
+.status-row:last-child { margin-bottom:0; }
+.status-row .lbl { color:var(--muted); }
+.status-row .val { color:var(--navy); font-weight:600; }
+
+.error-code {
+  font-size:11px; color:var(--danger);
+  background:var(--danger-lt); border-radius:6px;
+  padding:6px 10px; margin-bottom:16px;
+  font-family:monospace; text-align:center;
+}
+.warn-box {
+  background:var(--warn-lt); border:1px solid #F0C070;
+  border-radius:10px; padding:12px 14px;
+  font-size:12.5px; color:var(--warn);
+  margin-bottom:16px; line-height:1.5;
+}
+
+/* ── Confirm success screen ── */
+.success-screen {
+  background:var(--surface);
+  border-radius:20px; border:1px solid var(--border);
+  padding:48px 40px; text-align:center;
+  max-width:460px; width:100%; margin:auto;
+  animation:slideUp .3s ease;
+}
+.success-check {
+  width:70px; height:70px; border-radius:50%;
+  background:var(--sage-lt); margin:0 auto 20px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:30px;
+}
+.success-h { font-family:'DM Serif Display',serif; font-size:26px; color:var(--navy); margin-bottom:8px; }
+.success-sub { font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:28px; }
+.success-card { background:var(--bg); border-radius:12px; padding:16px 20px; margin-bottom:24px; text-align:left; }
+.srow { display:flex; align-items:flex-start; gap:10px; font-size:13px; margin-bottom:10px; }
+.srow:last-child { margin-bottom:0; }
+.srow-lbl { color:var(--muted); width:80px; flex-shrink:0; font-size:11.5px; padding-top:1px; }
+.srow-val { color:var(--navy); font-weight:600; }
+.gcal-btn {
+  display:inline-flex; align-items:center; gap:8px;
+  background:#fff; border:1.5px solid var(--border); border-radius:10px;
+  padding:11px 20px; font-family:'DM Sans',sans-serif;
+  font-size:13px; font-weight:600; color:var(--text);
+  cursor:pointer; transition:all .15s;
+  margin-bottom:10px; width:100%; justify-content:center;
+}
+.gcal-btn:hover { border-color:var(--steel); background:var(--steel-lt); }
+
+/* Processing spinner */
+.spinner {
+  width:40px; height:40px; border-radius:50%;
+  border:3px solid var(--border);
+  border-top-color:var(--navy);
+  animation:spin .7s linear infinite;
+  margin:0 auto 16px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+.modal-actions { display:flex; flex-direction:column; gap:8px; }
+.modal-actions .btn { width:100%; }
+
+/* ── Responsive ── */
+@media(max-width:1000px){ .psico-card{display:none;} }
+@media(max-width:780px){
+  .main{flex-direction:column; align-items:center;}
+  .cal-panel{width:100%; max-width:520px;}
+  .time-panel{width:100%; max-width:520px; max-height:none;}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <img class="logo-img" src="logo_final.png" alt="PsicoLink" />
+  <span class="logo-text">PsicoLink</span>
+</header>
+
+<div class="steps-bar" id="stepsBar">
+  <div class="step done"   id="step1"><div class="step-num">✓</div> Profesional</div>
+  <div class="step active" id="step2"><div class="step-num">2</div> Fecha y hora</div>
+  <div class="step"        id="step3"><div class="step-num">3</div> Pago</div>
+  <div class="step"        id="step4"><div class="step-num">4</div> Confirmación</div>
+</div>
+
+<div class="main"       id="mainArea"></div>
+<div class="bottom-bar" id="bottomBar"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const PSICO = { name:'Dra. Laura Gómez', spec:'Psicología clínica · TCC', duration:'50 min', price:'$4.500', priceNum:4500 };
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const AVAIL_DOW = [1,2,3,4]; // Lun–Jue
+
+function dFmt(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function buildSlots(date){
+  const base = [
+    {id:0,start:'09:00',end:'09:50',mode:'online'},
+    {id:1,start:'10:00',end:'10:50',mode:'online'},
+    {id:2,start:'11:00',end:'11:50',mode:'presencial'},
+    {id:3,start:'12:00',end:'12:50',mode:'presencial'},
+    {id:4,start:'14:00',end:'14:50',mode:'online'},
+    {id:5,start:'15:00',end:'15:50',mode:'presencial'},
+    {id:6,start:'16:00',end:'16:50',mode:'online'},
+    {id:7,start:'17:00',end:'17:50',mode:'presencial'},
+    {id:8,start:'18:00',end:'18:50',mode:'online'},
+  ];
+  return base.map(s=>({...s, booked: s.id===2||s.id===5}));
+}
+
+// ── Helpers ───────────────────────────────────
+function setStep(n){
+  [1,2,3,4].forEach(i=>{
+    const el = document.getElementById('step'+i);
+    if(!el) return;
+    if(i < n){ el.className='step done'; el.querySelector('.step-num').textContent='✓'; }
+    else if(i===n){ el.className='step active'; el.querySelector('.step-num').textContent=i; }
+    else { el.className='step'; el.querySelector('.step-num').textContent=i; }
+  });
+}
+
+// ── CALENDAR ──────────────────────────────────
+function Calendar({ selected, onSelect }){
+  const today = new Date();
+  const [view, setView] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const yr = view.getFullYear(), mo = view.getMonth();
+  const firstDOW = new Date(yr,mo,1).getDay();
+  const dim = new Date(yr,mo+1,0).getDate();
+  const todayMid = new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  const canPrev = new Date(yr,mo,1) > new Date(today.getFullYear(),today.getMonth(),1);
+
+  const cells = [];
+  for(let i=0;i<firstDOW;i++) cells.push(null);
+  for(let d=1;d<=dim;d++) cells.push(d);
+
+  function cls(d){
+    if(!d) return 'cal-day';
+    const date = new Date(yr,mo,d);
+    if(date<todayMid) return 'cal-day past';
+    if(!AVAIL_DOW.includes(date.getDay())) return 'cal-day unavail';
+    let c = 'cal-day avail';
+    if(selected && dFmt(selected)===dFmt(date)) c+=' selected';
+    if(dFmt(date)===dFmt(todayMid)) c+=' today';
+    return c;
+  }
+
+  function click(d){
+    if(!d) return;
+    const date = new Date(yr,mo,d);
+    if(date<todayMid||!AVAIL_DOW.includes(date.getDay())) return;
+    onSelect(date);
+  }
+
+  return (
+    <div className="cal-panel">
+      <div className="cal-header">
+        <span className="cal-month">{MONTHS[mo]} {yr}</span>
+        <div className="cal-nav">
+          <button onClick={()=>setView(new Date(yr,mo-1,1))} disabled={!canPrev}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7L9 3" stroke="#2D4270" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <button onClick={()=>setView(new Date(yr,mo+1,1))}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="#2D4270" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div className="cal-grid">
+        {DAYS.map(d=><div key={d} className="cal-dow">{d}</div>)}
+        {cells.map((d,i)=>(
+          <div key={i} className={cls(d)} onClick={()=>click(d)}>{d}</div>
+        ))}
+      </div>
+      <div className="cal-legend">
+        <div className="leg"><div className="leg-dot" style={{background:'#7FA98A'}}></div>Disponible</div>
+        <div className="leg"><div className="leg-dot" style={{background:'#E2E8F0'}}></div>Sin turnos</div>
+        <div className="leg"><div className="leg-dot" style={{background:'#2D4270',borderRadius:3,width:10,height:10}}></div>Seleccionado</div>
+      </div>
+    </div>
+  );
+}
+
+// ── TIME PANEL ────────────────────────────────
+function TimePanel({ date, selected, onSelect }){
+  if(!date) return (
+    <div className="time-panel">
+      <div className="tp-empty">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="16" stroke="#8A96A8" strokeWidth="1.8"/><path d="M22 13v9l5.5 3.5" stroke="#8A96A8" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        <p>Seleccioná un día para ver los horarios disponibles</p>
+      </div>
+    </div>
+  );
+
+  const slots = buildSlots(date);
+  const morning = slots.filter(s=>parseInt(s.start)<13);
+  const after   = slots.filter(s=>parseInt(s.start)>=13);
+  const dn = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][date.getDay()];
+
+  return (
+    <div className="time-panel" key={dFmt(date)}>
+      <div className="tp-head">
+        <div className="tp-title">Elegí un horario</div>
+        <div className="tp-date">{dn} {date.getDate()} de {MONTHS[date.getMonth()].toLowerCase()}</div>
+      </div>
+      <div className="tp-scroll">
+        <SlotGroup label="Mañana"  slots={morning} sel={selected} onSelect={onSelect}/>
+        <SlotGroup label="Tarde"   slots={after}   sel={selected} onSelect={onSelect}/>
+      </div>
+    </div>
+  );
+}
+
+function SlotGroup({label,slots,sel,onSelect}){
+  return (
+    <>
+      <div className="tp-section">{label}</div>
+      <div className="timeline">
+        <div className="tl-line"></div>
+        {slots.map(s=>{
+          const isSel = sel?.id===s.id;
+          return (
+            <div key={s.id} className={`slot ${s.booked?'booked':''} ${isSel?'sel':''}`} onClick={()=>!s.booked&&onSelect(s)}>
+              <div className="slot-dot"></div>
+              <div className="slot-card">
+                <div className="slot-range">
+                  {s.start}<span className="arr">→</span><span className="end">{s.end}</span>
+                </div>
+                <div className="slot-bar"><div className="slot-bar-fill"></div></div>
+                <span className={`slot-tag ${s.booked?'tag-ocupado':s.mode==='online'?'tag-online':'tag-presencial'}`}>
+                  {s.booked?'Ocupado':s.mode==='online'?'📹 Online':'🏢 Presencial'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ── PSICO CARD ────────────────────────────────
+function PsicoCard({day,slot}){
+  const has = day&&slot;
+  const dn = day ? DAYS[day.getDay()] : null;
+  const ds = day ? `${dn} ${day.getDate()} de ${MONTHS[day.getMonth()].toLowerCase()}` : null;
+  return (
+    <div className="psico-card">
+      <div className="psico-avatar">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none"><circle cx="15" cy="12" r="5.5" fill="#2D4270" opacity=".35"/><path d="M3 27c0-6.075 5.373-11 12-11s12 4.925 12 11" stroke="#2D4270" strokeWidth="1.8" strokeLinecap="round" opacity=".35"/></svg>
+      </div>
+      <div className="psico-name">{PSICO.name}</div>
+      <div className="psico-spec">{PSICO.spec}</div>
+      <div className="psico-badge">
+        <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="#7FA98A"/></svg>
+        Disponible
+      </div>
+      <div className="info-row">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#8A96A8" strokeWidth="1.2"/><path d="M6.5 4V6.5l1.8 1.2" stroke="#8A96A8" strokeWidth="1.2" strokeLinecap="round"/></svg>
+        {PSICO.duration} por sesión
+      </div>
+      <div className="info-row">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="2.5" width="10" height="8" rx="1.5" stroke="#8A96A8" strokeWidth="1.2"/><path d="M1.5 5.5h10" stroke="#8A96A8" strokeWidth="1.2"/><path d="M4.5 1v2M8.5 1v2" stroke="#8A96A8" strokeWidth="1.2" strokeLinecap="round"/></svg>
+        Lun a Jue
+      </div>
+      <div className="divider"></div>
+      <div className="summary-block">
+        <div className="sum-label">Sesión seleccionada</div>
+        {has ? (
+          <>
+            <div className="sum-val">{ds}</div>
+            <div style={{marginTop:4,fontSize:13,color:'#8AACC8',fontWeight:600}}>{slot.start} – {slot.end}</div>
+            <div style={{marginTop:5,fontSize:11,color:'#8A96A8'}}>{slot.mode==='online'?'📹 Online':'🏢 Presencial'} · {PSICO.price}</div>
+          </>
+        ):(
+          <div className="sum-val empty">Ninguna aún</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── PAYMENT MODAL ─────────────────────────────
+function fmtCard(v){
+  return v.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
+}
+function fmtExp(v){
+  const raw = v.replace(/\D/g,'').slice(0,4);
+  return raw.length>2 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
+}
+
+function PayModal({ day, slot, onClose, onResult }){
+  const [card,setCard]   = useState('');
+  const [name,setName]   = useState('');
+  const [exp,setExp]     = useState('');
+  const [cvc,setCvc]     = useState('');
+  const [loading,setLoading] = useState(false);
+
+  const dn = DAYS[day.getDay()];
+  const ds = `${dn} ${day.getDate()} de ${MONTHS[day.getMonth()].toLowerCase()}`;
+
+  function submit(e){
+    e.preventDefault();
+    setLoading(true);
+    // Simulate async payment — random outcome for demo
+    setTimeout(()=>{
+      setLoading(false);
+      const r = Math.random();
+      if(r<0.55)      onResult('success');
+      else if(r<0.75) onResult('declined');
+      else if(r<0.88) onResult('insufficient');
+      else if(r<0.94) onResult('network');
+      else            onResult('taken');
+    }, 2200);
+  }
+
+  const valid = card.replace(/\s/g,'').length===16 && name.trim().length>2 && exp.length===5 && cvc.length===3;
+
+  return (
+    <div className="overlay" onClick={e=>e.target===e.currentTarget&&!loading&&onClose()}>
+      <div className="modal">
+        {!loading && <button className="modal-close" onClick={onClose}>✕</button>}
+        {loading ? (
+          <div style={{textAlign:'center',padding:'20px 0'}}>
+            <div className="spinner"></div>
+            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:'var(--navy)',marginBottom:6}}>Procesando pago…</div>
+            <div style={{fontSize:13,color:'var(--muted)'}}>No cerrés esta ventana</div>
+          </div>
+        ) : (
+          <>
+            <div className="modal-icon icon-pay">💳</div>
+            <div className="modal-title">Pagar sesión</div>
+            <div className="modal-sub">Pago seguro con tarjeta. Podés cancelar hasta 24 hs antes.</div>
+
+            <div className="session-recap">
+              <div className="recap-dot"></div>
+              <div className="recap-info">
+                <strong>{ds} · {slot.start} – {slot.end}</strong>
+                <span>{PSICO.name} · {slot.mode==='online'?'Online':'Presencial'}</span>
+              </div>
+              <div className="recap-price">{PSICO.price}</div>
+            </div>
+
+            <div className="card-icons">
+              <div className="card-icon visa">VISA</div>
+              <div className="card-icon mc">MC</div>
+              <div className="card-icon">AMEX</div>
+              <div className="card-icon">Débito</div>
+            </div>
+
+            <form onSubmit={submit}>
+              <div className="form-group">
+                <label className="form-label">Número de tarjeta</label>
+                <input className="form-input" placeholder="0000 0000 0000 0000" value={card}
+                  onChange={e=>setCard(fmtCard(e.target.value))} maxLength={19} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Nombre en la tarjeta</label>
+                <input className="form-input" placeholder="Nombre Apellido" value={name}
+                  onChange={e=>setName(e.target.value)} />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Vencimiento</label>
+                  <input className="form-input" placeholder="MM/AA" value={exp}
+                    onChange={e=>setExp(fmtExp(e.target.value))} maxLength={5} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">CVC</label>
+                  <input className="form-input" placeholder="•••" value={cvc}
+                    onChange={e=>setCvc(e.target.value.replace(/\D/g,'').slice(0,3))} maxLength={3} />
+                </div>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{width:'100%',marginTop:4}} disabled={!valid}>
+                Pagar {PSICO.price}
+              </button>
+            </form>
+            <div className="secure-note">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1L2 3v3.5C2 9 4 11 6 11s4-2 4-4.5V3L6 1Z" stroke="#8A96A8" strokeWidth="1.2"/></svg>
+              Pago seguro · Cifrado SSL
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── RESULT MODALS ─────────────────────────────
+function SuccessModal({ day, slot, onDone }){
+  const dn = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][day.getDay()];
+  const ds = `${dn} ${day.getDate()} de ${MONTHS[day.getMonth()]}`;
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <div className="modal-icon icon-ok">✓</div>
+        <div className="modal-title">¡Pago exitoso!</div>
+        <div className="modal-sub">Tu turno fue reservado. Recibirás un email de confirmación.</div>
+        <div className="status-detail">
+          <div className="status-row"><span className="lbl">Profesional</span><span className="val">{PSICO.name}</span></div>
+          <div className="status-row"><span className="lbl">Fecha</span><span className="val">{ds}</span></div>
+          <div className="status-row"><span className="lbl">Horario</span><span className="val">{slot.start} – {slot.end}</span></div>
+          <div className="status-row"><span className="lbl">Modalidad</span><span className="val">{slot.mode==='online'?'📹 Online':'🏢 Presencial'}</span></div>
+          <div className="status-row"><span className="lbl">Total pagado</span><span className="val" style={{color:'var(--sage)'}}>{PSICO.price}</span></div>
+        </div>
+        <div className="modal-actions">
+          <button className="gcal-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2.5" width="14" height="12" rx="2" stroke="#4285F4" strokeWidth="1.4"/><path d="M1 6h14" stroke="#4285F4" strokeWidth="1.4"/><path d="M5.5 1v2M10.5 1v2" stroke="#4285F4" strokeWidth="1.4" strokeLinecap="round"/><rect x="4.5" y="9" width="3" height="3" rx=".5" fill="#34A853"/></svg>
+            Agregar a Google Calendar
+          </button>
+          <button className="btn btn-primary" onClick={onDone}>Ir al inicio</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeclinedModal({ onRetry, onCancel }){
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <div className="modal-icon icon-err">✕</div>
+        <div className="modal-title">Tarjeta rechazada</div>
+        <div className="modal-sub">Tu banco rechazó el pago. Verificá los datos o usá otra tarjeta.</div>
+        <div className="error-code">ERROR · CARD_DECLINED · 4000</div>
+        <div style={{fontSize:12.5,color:'var(--muted)',marginBottom:18,lineHeight:1.6}}>
+          Posibles causas: datos incorrectos, tarjeta vencida, límite de crédito alcanzado o restricción del banco.
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-primary" onClick={onRetry}>Reintentar con otra tarjeta</button>
+          <button className="btn btn-ghost" onClick={onCancel}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InsufficientModal({ onRetry, onCancel }){
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <div className="modal-icon icon-err">⚠</div>
+        <div className="modal-title">Fondos insuficientes</div>
+        <div className="modal-sub">Tu tarjeta no tiene fondos suficientes para completar el pago de {PSICO.price}.</div>
+        <div className="error-code">ERROR · INSUFFICIENT_FUNDS · 4001</div>
+        <div className="warn-box">
+          Podés intentar con una tarjeta de crédito diferente o contactar a tu banco para aumentar tu límite disponible.
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-primary" onClick={onRetry}>Usar otra tarjeta</button>
+          <button className="btn btn-ghost" onClick={onCancel}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NetworkModal({ onRetry, onCancel }){
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <div className="modal-icon icon-warn">📡</div>
+        <div className="modal-title">Error de conexión</div>
+        <div className="modal-sub">No pudimos conectarnos al servidor de pagos. Tu tarjeta no fue cobrada.</div>
+        <div className="error-code">ERROR · NETWORK_TIMEOUT · 503</div>
+        <div style={{fontSize:12.5,color:'var(--muted)',marginBottom:18,lineHeight:1.6}}>
+          Verificá tu conexión a internet e intentá de nuevo. El turno está reservado por 10 minutos más.
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-primary" onClick={onRetry}>Reintentar</button>
+          <button className="btn btn-ghost" onClick={onCancel}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TakenModal({ onBack }){
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <div className="modal-icon icon-warn">📅</div>
+        <div className="modal-title">Turno no disponible</div>
+        <div className="modal-sub">Otro paciente reservó este horario mientras procesábamos tu pago.</div>
+        <div className="error-code">ERROR · SLOT_ALREADY_TAKEN · 409</div>
+        <div style={{fontSize:12.5,color:'var(--muted)',marginBottom:18,lineHeight:1.6}}>
+          No te preocupes, no se realizó ningún cobro. Elegí otro horario o fecha disponible.
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-primary" onClick={onBack}>Elegir otro horario</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ROOT APP ──────────────────────────────────
+function App(){
+  const [day,  setDay]  = useState(null);
+  const [slot, setSlot] = useState(null);
+  const [modal, setModal] = useState(null); // null | 'pay' | 'success' | 'declined' | 'insufficient' | 'network' | 'taken'
+
+  function handleDay(d){ setDay(d); setSlot(null); }
+
+  function openPay(){ setModal('pay'); }
+
+  function handleResult(r){
+    setModal(r==='success'?'success':r);
+  }
+
+  function retryPay(){ setModal('pay'); }
+
+  function cancelModal(){ setModal(null); }
+
+  function handleDone(){
+    setModal(null); setDay(null); setSlot(null); setStep(2);
+  }
+
+  // Update step indicator
+  useEffect(()=>{ setStep(2); },[]);
+
+  const canPay = !!day && !!slot;
+  const dn = day ? DAYS[day.getDay()] : null;
+  const ds = day ? `${dn} ${day.getDate()} de ${MONTHS[day.getMonth()].toLowerCase()}` : null;
+
+  return (
+    <>
+      {/* Main content */}
+      {ReactDOM.createPortal(
+        <>
+          <PsicoCard day={day} slot={slot}/>
+          <Calendar selected={day} onSelect={handleDay}/>
+          <TimePanel date={day} selected={slot} onSelect={setSlot}/>
+        </>,
+        document.getElementById('mainArea')
+      )}
+
+      {/* Bottom bar */}
+      {ReactDOM.createPortal(
+        canPay ? (
+          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div className="bar-summary">
+              <strong>{ds} · {slot.start} – {slot.end}</strong>
+              <span>{PSICO.name} · {slot.mode==='online'?'Online':'Presencial'} · {PSICO.price}</span>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button className="btn btn-ghost" onClick={()=>{setSlot(null);}}>Limpiar</button>
+              <button className="btn btn-primary" onClick={openPay}>Ir al pago →</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <span className="bar-hint">{!day?'Seleccioná un día en el calendario':'Elegí un horario para continuar'}</span>
+            <button className="btn btn-primary" disabled>Ir al pago →</button>
+          </div>
+        ),
+        document.getElementById('bottomBar')
+      )}
+
+      {/* Modals */}
+      {modal==='pay' && <PayModal day={day} slot={slot} onClose={cancelModal} onResult={handleResult}/>}
+      {modal==='success' && <SuccessModal day={day} slot={slot} onDone={handleDone}/>}
+      {modal==='declined' && <DeclinedModal onRetry={retryPay} onCancel={cancelModal}/>}
+      {modal==='insufficient' && <InsufficientModal onRetry={retryPay} onCancel={cancelModal}/>}
+      {modal==='network' && <NetworkModal onRetry={retryPay} onCancel={cancelModal}/>}
+      {modal==='taken' && <TakenModal onBack={cancelModal}/>}
+    </>
+  );
+}
+
+const rootEl = document.createElement('div');
+document.body.appendChild(rootEl);
+ReactDOM.createRoot(rootEl).render(<App/>);
+</script>
+</body>
+</html>

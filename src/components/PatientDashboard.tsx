@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import PsicoLinkAppointmentModal from "@/components/PsicoLinkAppointmentModal";
 import ReviewsPanel from "@/components/ReviewsPanel";
+import Image from "next/image";
 
 interface Patient {
   name?: string | null;
@@ -16,6 +17,9 @@ interface Psychologist {
   name: string | null;
   email: string;
   image: string | null;
+  sessionDuration: number;
+  cbu: string | null;
+  alias: string | null;
 }
 
 interface Appointment {
@@ -58,6 +62,9 @@ const STATUS_STYLES: Record<Appointment["status"], { label: string; className: s
   CONFIRMED: { label: "Confirmado", className: "bg-[#D0E8D8] text-[#557C5F]" },
   CANCELLED: { label: "Cancelado", className: "bg-[#FDF0EE] text-[#C0392B]" },
 };
+const PAID_PAYMENT_STATUSES = ["PAID", "approved"];
+const PENDING_PAYMENT_STATUSES = ["PENDING", "pending", "in_process"];
+const FAILED_PAYMENT_STATUSES = ["REJECTED", "CANCELLED", "rejected", "cancelled"];
 
 function initials(name?: string | null, email?: string | null) {
   if (name) return name.split(" ").map((part) => part[0]).join("").toUpperCase().slice(0, 2);
@@ -119,13 +126,8 @@ function VideoIcon() {
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="grid h-7 w-7 grid-cols-2 gap-0.5">
-        <span className={`rounded-[3px] ${dark ? "bg-white" : "bg-[#2D4270]"}`} />
-        <span className="rounded-[3px] bg-[#8AACC8]" />
-        <span className="rounded-[3px] bg-[#7FA98A]" />
-        <span className="rounded-[3px] bg-[#D8EAF7]" />
-      </div>
-      <span className={`font-serif text-lg ${dark ? "text-white" : "text-[#2D4270]"}`}>PsicoLink</span>
+      <Image src="/logo_final.png" alt="Mi Terapia" width={34} height={34} className="h-[34px] w-[34px] rounded-lg object-cover" priority />
+      <span className={`font-serif text-lg ${dark ? "text-white" : "text-[#2D4270]"}`}>Mi Terapia</span>
     </div>
   );
 }
@@ -232,7 +234,10 @@ export default function PatientDashboard({ patient }: Props) {
   const dashboardAppointments = useMemo(() => appointments.map(formatAppointment), [appointments]);
   const now = mounted ? new Date() : new Date(0);
   const upcoming = dashboardAppointments
-    .filter((appointment) => appointment.status !== "CANCELLED" && new Date(appointment.date) >= now)
+    .filter((appointment) => appointment.status === "CONFIRMED" && new Date(appointment.date) >= now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const pendingRequests = dashboardAppointments
+    .filter((appointment) => appointment.status === "PENDING" && new Date(appointment.date) >= now)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const history = dashboardAppointments
     .filter((appointment) => appointment.status === "CANCELLED" || new Date(appointment.date) < now)
@@ -289,7 +294,7 @@ export default function PatientDashboard({ patient }: Props) {
 
   const navItems: Array<{ id: Section; label: string; icon: React.ReactNode; badge?: number }> = [
     { id: "home", label: "Inicio", icon: <HomeIcon /> },
-    { id: "agenda", label: "Mis turnos", icon: <CalendarIcon />, badge: upcoming.length || undefined },
+    { id: "agenda", label: "Mis turnos", icon: <CalendarIcon />, badge: (upcoming.length + pendingRequests.length) || undefined },
     { id: "history", label: "Historial", icon: <HistoryIcon /> },
     { id: "payments", label: "Pagos", icon: <CardIcon />, badge: pendingCount || undefined },
     { id: "profile", label: "Mi perfil", icon: <UserIcon /> },
@@ -357,7 +362,7 @@ export default function PatientDashboard({ patient }: Props) {
               disabled={!psychologist}
               className="inline-flex items-center gap-2 rounded-lg bg-[#2D4270] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1F3060] disabled:bg-[#E2E8F0] disabled:text-[#8A96A8]"
             >
-              <PlusIcon /> Nuevo turno
+              <PlusIcon /> Solicitar turno
             </button>
           </div>
         </header>
@@ -381,25 +386,23 @@ export default function PatientDashboard({ patient }: Props) {
                 <section className="relative mb-7 overflow-hidden rounded-[18px] bg-gradient-to-br from-[#2D4270] to-[#3A5494] px-6 py-7 text-white md:flex md:items-center md:gap-6">
                   <div className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-[14px] bg-white/15 text-2xl md:mb-0">📅</div>
                   <div className="relative z-10 flex-1">
-                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-white/55">Próxima sesión</div>
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-white/55">Próxima sesión confirmada</div>
                     <h1 className="font-serif text-2xl">{upcoming[0].dayName} {upcoming[0].day} de {upcoming[0].month} · {upcoming[0].time}</h1>
                     <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-white/70">
                       <span>{upcoming[0].professional}</span>
                       <span className="h-1.5 w-1.5 rounded-full bg-[#7FA98A]" />
                       <span>Online</span>
-                      {upcoming[0].status === "PENDING" && <span className="font-semibold text-[#FFD580]">Confirmación pendiente</span>}
                     </div>
                   </div>
                   <div className="relative z-10 mt-5 flex gap-2 md:mt-0">
                     <button className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[#2D4270]"><VideoIcon /> Unirse</button>
-                    {upcoming[0].status === "PENDING" && <button onClick={() => setCancelTarget(upcoming[0])} className="rounded-lg border border-white/35 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10">Cancelar</button>}
                   </div>
                 </section>
               ) : (
                 <section className="mb-7 rounded-[18px] border border-dashed border-[#8AACC8] bg-white p-8 text-center">
                   <h1 className="font-serif text-2xl text-[#2D4270]">No tenés turnos próximos</h1>
-                  <p className="mt-2 text-sm text-[#8A96A8]">Cuando agendes un turno, aparecerá acá como próxima sesión.</p>
-                  <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="mt-5 rounded-lg bg-[#2D4270] px-5 py-2.5 text-sm font-semibold text-white disabled:bg-[#E2E8F0] disabled:text-[#8A96A8]">Agendar turno</button>
+                  <p className="mt-2 text-sm text-[#8A96A8]">Cuando solicites un turno, aparecerá acá como próxima sesión.</p>
+                  <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="mt-5 rounded-lg bg-[#2D4270] px-5 py-2.5 text-sm font-semibold text-white disabled:bg-[#E2E8F0] disabled:text-[#8A96A8]">Solicitar turno</button>
                 </section>
               )}
 
@@ -407,7 +410,7 @@ export default function PatientDashboard({ patient }: Props) {
                 <StatCard icon="📅" value={String(appointments.length)} label="Turnos totales" detail={`${appointments.length} registrados`} tone="bg-[#EEF2FA]" />
                 <StatCard icon="✓" value={String(confirmedCount)} label="Turnos confirmados" detail="Sesiones aprobadas" tone="bg-[#D0E8D8]" />
                 <StatCard icon="⏳" value={String(pendingCount)} label="Pendientes" detail="Esperando confirmación" tone="bg-[#FEF4E6]" />
-                <StatCard icon="🗓" value={String(upcoming.length)} label="Turnos próximos" detail="Agenda activa" tone="bg-[#D8EAF7]" />
+                <StatCard icon="🗓" value={String(upcoming.length)} label="Turnos próximos" detail="Confirmados" tone="bg-[#D8EAF7]" />
               </section>
 
               <section className="grid gap-5 xl:grid-cols-2">
@@ -459,11 +462,18 @@ export default function PatientDashboard({ patient }: Props) {
             <>
               <div className="mb-5 flex items-center justify-between">
                 <h1 className="font-serif text-xl text-[#2D4270]">Mis turnos</h1>
-                <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="inline-flex items-center gap-2 rounded-lg bg-[#2D4270] px-4 py-2.5 text-sm font-semibold text-white disabled:bg-[#E2E8F0] disabled:text-[#8A96A8]"><PlusIcon /> Agendar nuevo</button>
+                <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="inline-flex items-center gap-2 rounded-lg bg-[#2D4270] px-4 py-2.5 text-sm font-semibold text-white disabled:bg-[#E2E8F0] disabled:text-[#8A96A8]"><PlusIcon /> Solicitar turno</button>
               </div>
               {success && <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{success}</div>}
               <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-5">
-                {loading ? <div className="h-24 rounded-xl bg-[#F4F6FA]" /> : upcoming.length ? upcoming.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="No tenés turnos próximos." />}
+                {loading ? <div className="h-24 rounded-xl bg-[#F4F6FA]" /> : (
+                  upcoming.length || pendingRequests.length ? (
+                    <>
+                      {pendingRequests.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />)}
+                      {upcoming.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />)}
+                    </>
+                  ) : <EmptyState label="No tenés turnos próximos." />
+                )}
               </div>
             </>
           )}
@@ -484,9 +494,9 @@ export default function PatientDashboard({ patient }: Props) {
           )}
 
           {section === "payments" && (() => {
-            const paid = appointments.filter(a => a.paymentStatus === "approved");
-            const pending = appointments.filter(a => a.paymentStatus === "pending" || (a.amount && !a.paymentStatus));
-            const failed = appointments.filter(a => a.paymentStatus === "rejected" || a.paymentStatus === "cancelled");
+            const paid = appointments.filter(a => a.paymentStatus && PAID_PAYMENT_STATUSES.includes(a.paymentStatus));
+            const pending = appointments.filter(a => (a.paymentStatus && PENDING_PAYMENT_STATUSES.includes(a.paymentStatus)) || (a.amount && !a.paymentStatus));
+            const failed = appointments.filter(a => a.paymentStatus && FAILED_PAYMENT_STATUSES.includes(a.paymentStatus));
             const totalPaid = paid.reduce((sum, a) => sum + (a.amount ?? 0), 0);
             const totalPending = pending.reduce((sum, a) => sum + (a.amount ?? 0), 0);
             const currency = appointments.find(a => a.currency)?.currency ?? "ARS";
@@ -509,9 +519,13 @@ export default function PatientDashboard({ patient }: Props) {
                     const d = new Date(a.date);
                     const psLabel = a.psychologist.name || a.psychologist.email;
                     const psMap: Record<string, { label: string; className: string }> = {
+                      PAID: { label: "Pagado", className: "bg-[#D0E8D8] text-[#557C5F]" },
                       approved: { label: "Pagado", className: "bg-[#D0E8D8] text-[#557C5F]" },
+                      PENDING: { label: "Pendiente", className: "bg-[#FEF4E6] text-[#C07A20]" },
                       pending: { label: "Pendiente", className: "bg-[#FEF4E6] text-[#C07A20]" },
+                      REJECTED: { label: "Rechazado", className: "bg-[#FDF0EE] text-[#C0392B]" },
                       rejected: { label: "Rechazado", className: "bg-[#FDF0EE] text-[#C0392B]" },
+                      CANCELLED: { label: "Cancelado", className: "bg-[#FDF0EE] text-[#C0392B]" },
                       cancelled: { label: "Cancelado", className: "bg-[#FDF0EE] text-[#C0392B]" },
                     };
                     const ps = a.paymentStatus ? (psMap[a.paymentStatus] ?? { label: a.paymentStatus, className: "bg-gray-100 text-gray-600" }) : { label: "Sin pagar", className: "bg-gray-100 text-gray-500" };

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import BookingWidget from "@/components/BookingWidget";
 import { auth } from "@/auth";
+import Image from "next/image";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -31,17 +32,9 @@ export default async function PublicProfilePage({ params }: Props) {
       {/* Header */}
       <header className="bg-[#2D4270] py-4 px-6">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <div className="flex gap-0.5">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="w-2.5 h-2.5 rounded-sm"
-                style={{ backgroundColor: i % 2 === 0 ? "#8AACC8" : "#7FA98A" }}
-              />
-            ))}
-          </div>
+          <Image src="/logo_final.png" alt="Mi Terapia" width={43} height={43} className="h-[43px] w-[43px] rounded-lg object-cover ring-2 ring-white/20" />
           <span className="text-white font-bold text-lg" style={{ fontFamily: "DM Serif Display, Georgia, serif" }}>
-            PsicoLink
+            Mi Terapia
           </span>
         </div>
       </header>

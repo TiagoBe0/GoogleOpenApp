@@ -48,6 +48,7 @@ button{font-family:'DM Sans',sans-serif;cursor:pointer;}
 .sb-logo-mark span:nth-child(2){background:var(--steel);}
 .sb-logo-mark span:nth-child(3){background:var(--sage);}
 .sb-logo-mark span:nth-child(4){background:var(--steel-lt);}
+.sb-logo-img{width:34px;height:34px;border-radius:8px;object-fit:cover;flex-shrink:0;}
 .sb-logo-text{font-family:'DM Serif Display',serif;font-size:18px;color:#fff;}
 
 .sb-section{padding:20px 12px 8px;font-size:10px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:rgba(255,255,255,.35);}
@@ -757,7 +758,7 @@ function App(){
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sb-logo">
-          <div className="sb-logo-mark"><span/><span/><span/><span/></div>
+          <img className="sb-logo-img" src="../../logo_final.png" alt="PsicoLink" />
           <span className="sb-logo-text">PsicoLink</span>
         </div>
         <div className="sb-section">Menú</div>

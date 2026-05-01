@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json();
   const {
     slug, specialty, licenseNumber, bio, consultationFee, currency,
-    sessionDuration, timezone, instagramUrl, linkedinUrl, websiteUrl,
+    sessionDuration, timezone, cbu, alias, instagramUrl, linkedinUrl, websiteUrl,
   } = body;
 
   if (slug !== undefined) {
@@ -47,6 +47,8 @@ export async function PATCH(req: NextRequest) {
       currency: currency ?? "ARS",
       sessionDuration: sessionDuration ?? 50,
       timezone: timezone ?? "America/Argentina/Buenos_Aires",
+      cbu: cbu ?? null,
+      alias: alias ?? null,
       instagramUrl: instagramUrl ?? null,
       linkedinUrl: linkedinUrl ?? null,
       websiteUrl: websiteUrl ?? null,
@@ -60,6 +62,8 @@ export async function PATCH(req: NextRequest) {
       ...(currency !== undefined && { currency }),
       ...(sessionDuration !== undefined && { sessionDuration }),
       ...(timezone !== undefined && { timezone }),
+      ...(cbu !== undefined && { cbu }),
+      ...(alias !== undefined && { alias }),
       ...(instagramUrl !== undefined && { instagramUrl }),
       ...(linkedinUrl !== undefined && { linkedinUrl }),
       ...(websiteUrl !== undefined && { websiteUrl }),

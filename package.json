@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:reset": "prisma db push --force-reset && node prisma/seed-admin.js",
+    "db:seed:admin": "node prisma/seed-admin.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

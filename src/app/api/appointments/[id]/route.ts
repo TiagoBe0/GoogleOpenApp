@@ -7,11 +7,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const { id } = await params;
-  const { status } = await req.json();
-
-  if (!["CONFIRMED", "CANCELLED"].includes(status)) {
-    return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
-  }
+  const body = await req.json();
+  const { status, paymentStatus } = body;
 
   const appointment = await prisma.appointment.findUnique({ where: { id } });
   if (!appointment) return NextResponse.json({ error: "Turno no encontrado" }, { status: 404 });
@@ -23,6 +20,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
   }
 
+  // Confirm payment only (psychologist marks proof as verified)
+  if (paymentStatus === "PAID") {
+    if (!isPsychologist) return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
+
+    const updated = await prisma.appointment.update({
+      where: { id },
+      data: { paymentStatus: "PAID" },
+    });
+    return NextResponse.json(updated);
+  }
+
+  // Status transition
+  if (!status || !["CONFIRMED", "CANCELLED"].includes(status)) {
+    return NextResponse.json({ error: "Acción inválida" }, { status: 400 });
+  }
+
+  if (status === "CONFIRMED" && !isPsychologist) {
+    return NextResponse.json({ error: "Solo el psicólogo puede confirmar turnos" }, { status: 403 });
+  }
+
   const updated = await prisma.appointment.update({
     where: { id },
     data: { status },
@@ -31,7 +48,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
-  // Si el psicólogo confirma y tiene Google Calendar, crea el evento
+  // Create Google Calendar event when psychologist confirms
   if (status === "CONFIRMED" && isPsychologist && session.googleAccessToken) {
     const start = new Date(updated.date);
     const end = new Date(start.getTime() + updated.duration * 60 * 1000);

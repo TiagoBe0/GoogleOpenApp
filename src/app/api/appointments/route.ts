@@ -25,20 +25,38 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { date, duration, notes, psychologistId, patientName, patientEmail, patientPhone } = body;
+  const { date, duration, notes, psychologistId, patientId, patientName, patientEmail, patientPhone, paymentProofUrl } = body;
 
   if (!date) return NextResponse.json({ error: "La fecha es requerida" }, { status: 400 });
 
   const session = await auth();
   const isRegistered = !!session && session.user.role === "PATIENT";
+  const isPsychologist = !!session && session.user.role === "PSYCHOLOGIST";
+
+  let linkedPatient: { id: string; name: string | null; email: string } | null = null;
+
+  if (isPsychologist) {
+    if (!patientId) {
+      return NextResponse.json({ error: "Paciente requerido" }, { status: 400 });
+    }
+
+    linkedPatient = await prisma.user.findFirst({
+      where: { id: patientId, psychologistId: session!.user.id, role: "PATIENT" },
+      select: { id: true, name: true, email: true },
+    });
+
+    if (!linkedPatient) {
+      return NextResponse.json({ error: "El paciente no está vinculado a tu cuenta" }, { status: 403 });
+    }
+  }
 
   // Anonymous bookings require contact data and explicit psychologistId
-  if (!isRegistered && (!patientName || !patientEmail || !psychologistId)) {
+  if (!isRegistered && !isPsychologist && (!patientName || !patientEmail || !psychologistId)) {
     return NextResponse.json({ error: "Nombre, email y psicólogo son requeridos" }, { status: 400 });
   }
 
   // Registered patient: derive psychologistId from their linked psychologist
-  let resolvedPsychologistId = psychologistId;
+  let resolvedPsychologistId = isPsychologist ? session!.user.id : psychologistId;
   if (isRegistered && !resolvedPsychologistId) {
     const patient = await prisma.user.findUnique({
       where: { id: session!.user.id },
@@ -85,12 +103,45 @@ export async function POST(req: NextRequest) {
       date: appointmentDate,
       duration: durationMin,
       notes: notes ?? null,
-      status: "PENDING",
-      ...(isRegistered
+      status: isPsychologist ? "CONFIRMED" : "PENDING",
+      paymentProofUrl: paymentProofUrl ?? null,
+      ...(isPsychologist
+        ? { patientId: linkedPatient!.id }
+        : isRegistered
         ? { patientId: session!.user.id }
         : { patientName, patientEmail, patientPhone: patientPhone ?? null }),
     },
   });
+
+  if (isPsychologist) {
+    if (session!.googleAccessToken) {
+      const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session!.googleAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summary: `Sesión — ${linkedPatient!.name || linkedPatient!.email}`,
+          description: notes ?? "",
+          start: { dateTime: appointmentDate.toISOString(), timeZone: "America/Argentina/Buenos_Aires" },
+          end: { dateTime: endDate.toISOString(), timeZone: "America/Argentina/Buenos_Aires" },
+        }),
+      });
+
+      if (res.ok) {
+        const event = await res.json();
+        if (event.id) {
+          await prisma.appointment.update({
+            where: { id: appointment.id },
+            data: { calendarEventId: event.id },
+          });
+        }
+      }
+    }
+
+    return NextResponse.json({ appointment }, { status: 201 });
+  }
 
   // MercadoPago preference
   const fee = psychologist.psychologistProfile?.consultationFee;

@@ -100,7 +100,7 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Error al agendar el turno.");
+        setError(data.error ?? "Error al solicitar el turno.");
         return;
       }
 

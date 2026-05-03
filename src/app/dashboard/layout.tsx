@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/auth";
 import DashboardNav from "@/components/DashboardNav";
 import Image from "next/image";
+import Link from "next/link";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -13,10 +14,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Top header */}
       <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3">
+        <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <Image src="/logo_final.png" alt="Mi Terapia" width={38} height={38} className="h-[38px] w-[38px] rounded-lg object-cover" priority />
           <span className="font-bold text-gray-900 text-sm hidden sm:block">Mi Terapia</span>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">

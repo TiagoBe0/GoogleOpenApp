@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import PsicoLinkAppointmentModal from "@/components/PsicoLinkAppointmentModal";
+import PsychologistDirectory from "@/components/PsychologistDirectory";
 import ReviewsPanel from "@/components/ReviewsPanel";
 import Image from "next/image";
 
@@ -47,13 +48,14 @@ interface Props {
   patient: Patient;
 }
 
-type Section = "home" | "agenda" | "history" | "payments" | "profile";
+type Section = "home" | "agenda" | "history" | "payments" | "profile" | "directory";
 
 const SECTION_TITLES: Record<Section, string> = {
   home: "Inicio",
   agenda: "Mis turnos",
   history: "Historial",
   payments: "Pagos",
+  directory: "Directorio",
   profile: "Mi perfil",
 };
 
@@ -125,10 +127,10 @@ function VideoIcon() {
 
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <a href="/patient" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
       <Image src="/logo_final.png" alt="Mi Terapia" width={34} height={34} className="h-[34px] w-[34px] rounded-lg object-cover" priority />
       <span className={`font-serif text-lg ${dark ? "text-white" : "text-[#2D4270]"}`}>Mi Terapia</span>
-    </div>
+    </a>
   );
 }
 
@@ -297,6 +299,15 @@ export default function PatientDashboard({ patient }: Props) {
     { id: "agenda", label: "Mis turnos", icon: <CalendarIcon />, badge: (upcoming.length + pendingRequests.length) || undefined },
     { id: "history", label: "Historial", icon: <HistoryIcon /> },
     { id: "payments", label: "Pagos", icon: <CardIcon />, badge: pendingCount || undefined },
+    {
+      id: "directory",
+      label: "Directorio",
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      ),
+    },
     { id: "profile", label: "Mi perfil", icon: <UserIcon /> },
   ];
 
@@ -555,6 +566,10 @@ export default function PatientDashboard({ patient }: Props) {
               </>
             );
           })()}
+
+          {section === "directory" && (
+            <PsychologistDirectory />
+          )}
 
           {section === "profile" && (
             <>

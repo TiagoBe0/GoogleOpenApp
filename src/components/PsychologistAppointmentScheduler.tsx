@@ -10,16 +10,22 @@ interface Patient {
 }
 
 interface PsychologistAppointmentSchedulerProps {
+  psychologistId: string;
   buttonLabel?: string;
 }
 
-export default function PsychologistAppointmentScheduler({ buttonLabel = "Agendar turno" }: PsychologistAppointmentSchedulerProps) {
+export default function PsychologistAppointmentScheduler({
+  psychologistId,
+  buttonLabel = "Agendar turno",
+}: PsychologistAppointmentSchedulerProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [patientId, setPatientId] = useState("");
   const [date, setDate] = useState("");
+  const [slots, setSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState("50");
   const [notes, setNotes] = useState("");
@@ -44,8 +50,41 @@ export default function PsychologistAppointmentScheduler({ buttonLabel = "Agenda
     }
   }
 
+  function closeModal() {
+    setOpen(false);
+    setPatientId("");
+    setDate("");
+    setTime("");
+    setSlots([]);
+    setDuration("50");
+    setNotes("");
+    setError("");
+  }
+
+  async function handleDateChange(newDate: string) {
+    setDate(newDate);
+    setTime("");
+    setSlots([]);
+    if (!newDate) return;
+
+    setLoadingSlots(true);
+    try {
+      const [year, month, day] = newDate.split("-").map(Number);
+      const tzOffset = new Date().getTimezoneOffset();
+      const url = `/api/appointments/available-slots?psychologistId=${psychologistId}&year=${year}&month=${month}&day=${day}&tzOffset=${tzOffset}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      setSlots(Array.isArray(data.slots) ? data.slots : []);
+    } catch {
+      setSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!time) { setError("Seleccioná un horario"); return; }
     setSubmitting(true);
     setError("");
 
@@ -68,12 +107,7 @@ export default function PsychologistAppointmentScheduler({ buttonLabel = "Agenda
         return;
       }
 
-      setOpen(false);
-      setPatientId("");
-      setDate("");
-      setTime("");
-      setDuration("50");
-      setNotes("");
+      closeModal();
       router.refresh();
     } catch {
       setError("Revisá la fecha y hora e intentá nuevamente.");
@@ -81,6 +115,8 @@ export default function PsychologistAppointmentScheduler({ buttonLabel = "Agenda
       setSubmitting(false);
     }
   }
+
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <>
@@ -103,7 +139,7 @@ export default function PsychologistAppointmentScheduler({ buttonLabel = "Agenda
                 <h2 className="font-semibold text-gray-900">Agendar turno</h2>
                 <p className="mt-0.5 text-xs text-gray-400">Solo pacientes previamente vinculados</p>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-1.5 hover:bg-gray-100">
+              <button type="button" onClick={closeModal} className="rounded-lg p-1.5 hover:bg-gray-100">
                 <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -111,6 +147,7 @@ export default function PsychologistAppointmentScheduler({ buttonLabel = "Agenda
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
+              {/* Patient selector */}
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-gray-700">Paciente</span>
                 <select
@@ -134,34 +171,54 @@ export default function PsychologistAppointmentScheduler({ buttonLabel = "Agenda
                 </select>
               </label>
 
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Fecha</span>
-                  <input
-                    type="date"
-                    required
-                    value={date}
-                    onChange={(e) => { setDate(e.target.value); setError(""); }}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Hora</span>
-                  <input
-                    type="time"
-                    required
-                    value={time}
-                    onChange={(e) => { setTime(e.target.value); setError(""); }}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </label>
-              </div>
+              {/* Date */}
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium text-gray-700">Fecha</span>
+                <input
+                  type="date"
+                  required
+                  min={today}
+                  value={date}
+                  onChange={(e) => { handleDateChange(e.target.value); setError(""); }}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </label>
 
+              {/* Time slots */}
+              {date && (
+                <div>
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">Horario disponible</span>
+                  {loadingSlots ? (
+                    <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+                  ) : slots.length === 0 ? (
+                    <p className="text-sm text-gray-400 py-2">Sin horarios disponibles para este día</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {slots.map((slot) => (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => { setTime(slot); setError(""); }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                            time === slot
+                              ? "bg-indigo-600 text-white border-indigo-600"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-indigo-400 hover:text-indigo-600"
+                          }`}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Duration */}
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-gray-700">Duración</span>
                 <select
                   value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
+                  onChange={(e) => { setDuration(e.target.value); if (date) handleDateChange(date); }}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="30">30 min</option>
@@ -172,6 +229,7 @@ export default function PsychologistAppointmentScheduler({ buttonLabel = "Agenda
                 </select>
               </label>
 
+              {/* Notes */}
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-gray-700">Notas</span>
                 <textarea
@@ -192,14 +250,14 @@ export default function PsychologistAppointmentScheduler({ buttonLabel = "Agenda
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={closeModal}
                   className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting || loadingPatients || patients.length === 0}
+                  disabled={submitting || loadingPatients || patients.length === 0 || !time}
                   className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:bg-indigo-400"
                 >
                   {submitting ? "Agendando..." : "Agendar"}

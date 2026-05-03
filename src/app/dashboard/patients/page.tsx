@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/auth";
 import PatientsList from "@/components/PatientsList";
 import Image from "next/image";
+import Link from "next/link";
 
 export default async function PatientsPage() {
   const session = await auth();
@@ -18,10 +19,10 @@ export default async function PatientsPage() {
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col z-10">
         <div className="px-6 py-5 border-b border-gray-100">
-          <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <Image src="/logo_final.png" alt="Mi Terapia" width={38} height={38} className="h-[38px] w-[38px] rounded-lg object-cover" />
             <span className="font-bold text-gray-900">Mi Terapia</span>
-          </div>
+          </Link>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-1">
           <a href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 text-sm transition-colors">
@@ -82,7 +83,7 @@ export default async function PatientsPage() {
 
       <div className="lg:pl-64">
         <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-          <PatientsList />
+          <PatientsList psychologistId={session.user.id} />
         </main>
       </div>
     </div>

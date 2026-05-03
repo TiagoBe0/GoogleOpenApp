@@ -165,7 +165,7 @@ export default async function DashboardPage() {
       <ReviewsPanel title="Mis calificaciones" />
 
       {/* Weekly calendar */}
-      {hasGoogleCalendar && <WeekCalendar />}
+      {hasGoogleCalendar && <WeekCalendar psychologistId={session.user.id} hasGoogleCalendar={hasGoogleCalendar} />}
     </div>
   );
 }

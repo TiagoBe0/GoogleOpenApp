@@ -10,7 +10,7 @@ interface Patient {
   createdAt: string;
 }
 
-export default function PatientsList() {
+export default function PatientsList({ psychologistId }: { psychologistId: string }) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -21,6 +21,8 @@ export default function PatientsList() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [appointmentPatient, setAppointmentPatient] = useState<Patient | null>(null);
   const [appointmentDate, setAppointmentDate] = useState("");
+  const [appointmentSlots, setAppointmentSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [appointmentTime, setAppointmentTime] = useState("");
   const [appointmentDuration, setAppointmentDuration] = useState("50");
   const [appointmentNotes, setAppointmentNotes] = useState("");
@@ -98,15 +100,38 @@ export default function PatientsList() {
     setAppointmentPatient(patient);
     setAppointmentDate("");
     setAppointmentTime("");
+    setAppointmentSlots([]);
     setAppointmentDuration("50");
     setAppointmentNotes("");
     setAppointmentError("");
     setSuccess("");
   }
 
+  async function handleAppointmentDateChange(newDate: string) {
+    setAppointmentDate(newDate);
+    setAppointmentTime("");
+    setAppointmentSlots([]);
+    if (!newDate) return;
+
+    setLoadingSlots(true);
+    try {
+      const [year, month, day] = newDate.split("-").map(Number);
+      const tzOffset = new Date().getTimezoneOffset();
+      const url = `/api/appointments/available-slots?psychologistId=${psychologistId}&year=${year}&month=${month}&day=${day}&tzOffset=${tzOffset}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      setAppointmentSlots(Array.isArray(data.slots) ? data.slots : []);
+    } catch {
+      setAppointmentSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  }
+
   async function handleScheduleAppointment(e: React.FormEvent) {
     e.preventDefault();
     if (!appointmentPatient) return;
+    if (!appointmentTime) { setAppointmentError("Seleccioná un horario"); return; }
 
     setScheduling(true);
     setAppointmentError("");
@@ -299,28 +324,45 @@ export default function PatientsList() {
               </button>
             </div>
             <form onSubmit={handleScheduleAppointment} className="px-6 py-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-700 mb-1.5">Fecha</span>
-                  <input
-                    type="date"
-                    required
-                    value={appointmentDate}
-                    onChange={(e) => { setAppointmentDate(e.target.value); setAppointmentError(""); }}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </label>
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-700 mb-1.5">Hora</span>
-                  <input
-                    type="time"
-                    required
-                    value={appointmentTime}
-                    onChange={(e) => { setAppointmentTime(e.target.value); setAppointmentError(""); }}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </label>
-              </div>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1.5">Fecha</span>
+                <input
+                  type="date"
+                  required
+                  min={new Date().toISOString().split("T")[0]}
+                  value={appointmentDate}
+                  onChange={(e) => { handleAppointmentDateChange(e.target.value); setAppointmentError(""); }}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </label>
+
+              {appointmentDate && (
+                <div>
+                  <span className="block text-sm font-medium text-gray-700 mb-1.5">Horario disponible</span>
+                  {loadingSlots ? (
+                    <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+                  ) : appointmentSlots.length === 0 ? (
+                    <p className="text-sm text-gray-400 py-2">Sin horarios disponibles para este día</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {appointmentSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => { setAppointmentTime(slot); setAppointmentError(""); }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                            appointmentTime === slot
+                              ? "bg-indigo-600 text-white border-indigo-600"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-indigo-400 hover:text-indigo-600"
+                          }`}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <label className="block">
                 <span className="block text-sm font-medium text-gray-700 mb-1.5">Duración</span>
@@ -364,7 +406,7 @@ export default function PatientsList() {
                 </button>
                 <button
                   type="submit"
-                  disabled={scheduling}
+                  disabled={scheduling || !appointmentTime}
                   className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium transition-colors"
                 >
                   {scheduling ? "Agendando..." : "Agendar"}

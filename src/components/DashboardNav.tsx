@@ -48,7 +48,7 @@ export default function DashboardNav() {
 
   return (
     <>
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Menú</p>
+      <p className="text-[10px] font-semibold text-muted uppercase tracking-wider px-3 mb-2">Menú</p>
       {NAV_ITEMS.map(({ href, label, icon, badge }) => {
         const active = pathname === href;
         return (
@@ -57,14 +57,14 @@ export default function DashboardNav() {
             href={href}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
               ${active
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted hover:bg-surface-2 hover:text-ink"
               }`}
           >
-            <span className={active ? "text-white" : "text-gray-400"}>{icon}</span>
+            <span className={active ? "text-white" : "text-muted"}>{icon}</span>
             <span className="flex-1">{label}</span>
             {badge && (
-              <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-normal">
+              <span className="text-[10px] bg-surface-2 text-muted px-1.5 py-0.5 rounded-md font-normal">
                 {badge}
               </span>
             )}

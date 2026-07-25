@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
-      <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
+      <div className="bg-gradient-to-br from-primary to-primary-hi rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {session.user.image ? (
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
               <h1 className="text-xl font-bold">
                 Hola, {session.user.name?.split(" ")[0] || "psicólogo"}
               </h1>
-              <p className="text-indigo-200 text-sm mt-0.5">
+              <p className="text-primary-soft text-sm mt-0.5">
                 {profile?.specialty ?? session.user.email}
               </p>
             </div>
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
         {completionPct < 100 && (
           <div className="mt-4 pt-4 border-t border-white/10">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-indigo-200">Perfil completado al {completionPct}%</span>
+              <span className="text-xs text-primary-soft">Perfil completado al {completionPct}%</span>
               <Link href="/dashboard/perfil" className="text-xs text-white/70 hover:text-white underline">
                 Completar
               </Link>
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
         <div className="mt-4 pt-4 border-t border-white/10">
           {hasGoogleCalendar ? (
             <span className="inline-flex items-center gap-1.5 bg-white/15 text-white text-xs font-medium px-3 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block" />
+              <span className="w-1.5 h-1.5 bg-primary rounded-full inline-block" />
               Google Calendar conectado
             </span>
           ) : (
@@ -123,9 +123,11 @@ export default async function DashboardPage() {
             >
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-amber-200 hover:text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white/90 hover:text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
               >
-                <span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block" />
+                {/* Punto pálido, no --pending: sobre el hero oscuro el ámbar
+                    oscuro no se distingue. */}
+                <span className="w-1.5 h-1.5 bg-pending-soft rounded-full inline-block" />
                 Conectar Google Calendar
               </button>
             </form>
@@ -137,32 +139,32 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-3 gap-3">
         <Link
           href="/dashboard/turnos"
-          className="bg-white rounded-2xl border border-gray-200 p-4 text-center hover:border-indigo-300 hover:shadow-sm transition-all group"
+          className="bg-white rounded-2xl border border-line p-4 text-center hover:border-primary hover:shadow-sm transition-all group"
         >
-          <p className="text-2xl font-bold text-indigo-600 group-hover:scale-110 transition-transform inline-block">
+          <p className="text-2xl font-bold text-primary group-hover:scale-110 transition-transform inline-block">
             {upcomingCount}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">Esta semana</p>
+          <p className="text-xs text-muted mt-0.5">Esta semana</p>
         </Link>
         <Link
           href="/dashboard/turnos"
           className={`bg-white rounded-2xl border p-4 text-center hover:shadow-sm transition-all group ${
-            pendingCount > 0 ? "border-amber-300 bg-amber-50/50" : "border-gray-200"
+            pendingCount > 0 ? "border-pending bg-pending-soft/50" : "border-line"
           }`}
         >
-          <p className={`text-2xl font-bold group-hover:scale-110 transition-transform inline-block ${pendingCount > 0 ? "text-amber-600" : "text-gray-400"}`}>
+          <p className={`text-2xl font-bold group-hover:scale-110 transition-transform inline-block ${pendingCount > 0 ? "text-pending" : "text-muted"}`}>
             {pendingCount}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">Solicitudes</p>
+          <p className="text-xs text-muted mt-0.5">Solicitudes</p>
         </Link>
         <Link
           href="/dashboard/patients"
-          className="bg-white rounded-2xl border border-gray-200 p-4 text-center hover:border-indigo-300 hover:shadow-sm transition-all group"
+          className="bg-white rounded-2xl border border-line p-4 text-center hover:border-primary hover:shadow-sm transition-all group"
         >
-          <p className="text-2xl font-bold text-gray-700 group-hover:scale-110 transition-transform inline-block">
+          <p className="text-2xl font-bold text-ink group-hover:scale-110 transition-transform inline-block">
             {patientsCount}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">Pacientes</p>
+          <p className="text-xs text-muted mt-0.5">Pacientes</p>
         </Link>
       </div>
 

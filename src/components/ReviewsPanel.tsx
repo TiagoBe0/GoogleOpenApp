@@ -50,7 +50,7 @@ function Stars({
 
         if (!interactive) {
           return (
-            <span key={star} className={`text-lg leading-none ${active ? "text-amber-400" : "text-gray-200"}`}>
+            <span key={star} className={`text-lg leading-none ${active ? "text-pending" : "text-line"}`}>
               ★
             </span>
           );
@@ -61,7 +61,7 @@ function Stars({
             key={star}
             type="button"
             onClick={() => onChange?.(star)}
-            className={`text-2xl leading-none transition-colors ${active ? "text-amber-400" : "text-gray-300 hover:text-amber-300"}`}
+            className={`text-2xl leading-none transition-colors ${active ? "text-pending" : "text-muted hover:text-pending"}`}
             aria-label={`Calificar con ${star} estrellas`}
           >
             ★
@@ -161,9 +161,9 @@ export default function ReviewsPanel({ canReview = false, title = "Calificacione
 
       <div className="px-5 py-4 space-y-5">
         {canReview && (
-          <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-[#E2E8F0] bg-gray-50 p-4">
+          <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-[#E2E8F0] bg-surface-2 p-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-gray-800">
+              <p className="text-sm font-medium text-ink">
                 {data.myReview ? "Tu calificación" : "Calificar a mi psicólogo"}
               </p>
               <Stars value={rating} onChange={setRating} interactive />
@@ -180,8 +180,8 @@ export default function ReviewsPanel({ canReview = false, title = "Calificacione
               placeholder="Contá cómo fue tu experiencia..."
               className="w-full resize-none rounded-lg border border-[#E2E8F0] bg-white px-3 py-2.5 text-sm text-[#1C2940] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#8AACC8]"
             />
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {success && <p className="text-sm text-green-700">{success}</p>}
+            {error && <p className="text-sm text-danger">{error}</p>}
+            {success && <p className="text-sm text-primary-hi">{success}</p>}
             <button
               type="submit"
               disabled={submitting}
@@ -199,8 +199,8 @@ export default function ReviewsPanel({ canReview = false, title = "Calificacione
               return (
                 <div key={star} className="grid grid-cols-[48px_1fr_28px] items-center gap-2 text-xs text-[#8A96A8]">
                   <span>{star} ★</span>
-                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                    <div className="h-full rounded-full bg-amber-400" style={{ width: `${width}%` }} />
+                  <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+                    <div className="h-full rounded-full bg-pending" style={{ width: `${width}%` }} />
                   </div>
                   <span className="text-right">{count}</span>
                 </div>
@@ -211,8 +211,8 @@ export default function ReviewsPanel({ canReview = false, title = "Calificacione
 
         {loading ? (
           <div className="space-y-2">
-            <div className="h-16 rounded-xl bg-gray-100 animate-pulse" />
-            <div className="h-16 rounded-xl bg-gray-100 animate-pulse" />
+            <div className="h-16 rounded-xl bg-surface-2 animate-pulse" />
+            <div className="h-16 rounded-xl bg-surface-2 animate-pulse" />
           </div>
         ) : data.reviews.length === 0 ? (
           <p className="py-3 text-center text-sm text-[#8A96A8]">Todavía no hay calificaciones.</p>

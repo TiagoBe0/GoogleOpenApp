@@ -120,15 +120,15 @@ function psicoDisplayName(apt: PsicoAppointment): string {
 }
 
 const GOOGLE_EVENT_COLORS = [
-  "bg-indigo-500",
-  "bg-blue-500",
-  "bg-violet-500",
+  "bg-primary",
+  "bg-info",
+  "bg-info",
 ];
 
 function psicoEventColor(status: string): string {
-  if (status === "CONFIRMED") return "bg-emerald-500";
-  if (status === "PENDING") return "bg-amber-500";
-  return "bg-gray-400";
+  if (status === "CONFIRMED") return "bg-primary";
+  if (status === "PENDING") return "bg-pending";
+  return "bg-muted";
 }
 
 export default function WeekCalendar() {
@@ -206,80 +206,80 @@ export default function WeekCalendar() {
   const hasAnyEvents = googleEvents.length > 0 || psicoApts.length > 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-line overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-line">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setWeekStart(getWeekStart(new Date()))}
-            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-line hover:bg-surface-2 transition-colors"
           >
             Hoy
           </button>
           <div className="flex items-center">
             <button
               onClick={() => setWeekStart(addDays(weekStart, -7))}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
             >
-              <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <button
               onClick={() => setWeekStart(addDays(weekStart, 7))}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
             >
-              <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
           </div>
-          <span className="text-sm font-semibold text-gray-900 capitalize">
+          <span className="text-sm font-semibold text-ink capitalize">
             {formatMonthRange(weekStart, addDays(weekEnd, -1))}
           </span>
         </div>
         <div className="flex items-center gap-3">
           {/* Legend */}
           {hasAnyEvents && (
-            <div className="hidden sm:flex items-center gap-3 text-[11px] text-gray-500">
+            <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted">
               {psicoApts.some((a) => a.status === "CONFIRMED") && (
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-primary inline-block" />
                   Confirmado
                 </span>
               )}
               {psicoApts.some((a) => a.status === "PENDING") && (
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-pending inline-block" />
                   Pendiente
                 </span>
               )}
               {googleEvents.length > 0 && (
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-primary inline-block" />
                   Google Cal
                 </span>
               )}
             </div>
           )}
           {loading && (
-            <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           )}
         </div>
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-gray-100">
+      <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-line">
         <div />
         {weekDays.map((day, i) => (
           <div
             key={i}
-            className={`py-3 text-center border-l border-gray-100 ${isToday(day) ? "bg-indigo-50" : ""}`}
+            className={`py-3 text-center border-l border-line ${isToday(day) ? "bg-primary-soft" : ""}`}
           >
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{DAYS[i]}</p>
+            <p className="text-xs font-medium text-muted uppercase tracking-wide">{DAYS[i]}</p>
             <p
               className={`text-lg font-bold mt-0.5 w-9 h-9 mx-auto flex items-center justify-center rounded-full ${
-                isToday(day) ? "bg-indigo-600 text-white" : "text-gray-900"
+                isToday(day) ? "bg-primary text-white" : "text-ink"
               }`}
             >
               {day.getDate()}
@@ -299,7 +299,7 @@ export default function WeekCalendar() {
                 style={{ height: HOUR_HEIGHT }}
                 className="flex items-start justify-end pr-2 pt-1"
               >
-                <span className="text-[11px] text-gray-400 font-medium">{h}:00</span>
+                <span className="text-[11px] text-muted font-medium">{h}:00</span>
               </div>
             ))}
           </div>
@@ -308,7 +308,7 @@ export default function WeekCalendar() {
           {weekDays.map((day, di) => (
             <div
               key={di}
-              className={`relative border-l border-gray-100 ${isToday(day) ? "bg-indigo-50/30" : ""}`}
+              className={`relative border-l border-line ${isToday(day) ? "bg-primary-soft/30" : ""}`}
             >
               {/* Hour slots */}
               {hours.map((h) => (
@@ -316,10 +316,10 @@ export default function WeekCalendar() {
                   key={h}
                   style={{ height: HOUR_HEIGHT }}
                   onClick={() => handleSlotClick(day, h)}
-                  className="border-t border-gray-100 hover:bg-indigo-50/50 cursor-pointer transition-colors group"
+                  className="border-t border-line hover:bg-primary-soft/50 cursor-pointer transition-colors group"
                 >
                   <div className="hidden group-hover:flex items-center justify-center h-full">
-                    <span className="text-xs text-indigo-400 font-medium">+ Turno</span>
+                    <span className="text-xs text-primary font-medium">+ Turno</span>
                   </div>
                 </div>
               ))}

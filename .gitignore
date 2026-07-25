@@ -50,3 +50,4 @@ prisma/dev.db-journal
 
 # Google OAuth credentials file
 client_secret_*.json
+.gstack/

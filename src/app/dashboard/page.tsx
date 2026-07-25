@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
-      <div className="bg-gradient-to-br from-primary to-primary-hi rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
+      <div className="rounded-lg border border-line bg-surface p-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {session.user.image ? (
@@ -59,18 +59,18 @@ export default async function DashboardPage() {
               <img
                 src={session.user.image}
                 alt=""
-                className="w-14 h-14 rounded-full border-2 border-white/30 shadow-sm flex-shrink-0"
+                className="w-14 h-14 rounded-full border border-line shadow-sm flex-shrink-0"
               />
             ) : (
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white text-xl font-bold border-2 border-white/30 flex-shrink-0">
+              <div className="w-14 h-14 bg-primary-soft rounded-full flex items-center justify-center text-primary text-xl font-bold border border-primary flex-shrink-0">
                 {(session.user.name?.[0] ?? session.user.email?.[0] ?? "P").toUpperCase()}
               </div>
             )}
             <div>
-              <h1 className="text-xl font-bold">
+              <h1 className="font-display text-3xl font-semibold text-ink">
                 Hola, {session.user.name?.split(" ")[0] || "psicólogo"}
               </h1>
-              <p className="text-primary-soft text-sm mt-0.5">
+              <p className="text-muted text-sm mt-1">
                 {profile?.specialty ?? session.user.email}
               </p>
             </div>
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
             <Link
               href={`/p/${profile.slug}`}
               target="_blank"
-              className="hidden sm:flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors flex-shrink-0"
+              className="hidden min-h-11 sm:flex items-center gap-1.5 border border-line-strong bg-surface hover:bg-surface-2 text-ink text-sm font-semibold px-3 rounded-md transition-colors flex-shrink-0"
             >
               Ver perfil público
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -91,16 +91,16 @@ export default async function DashboardPage() {
 
         {/* Profile completion */}
         {completionPct < 100 && (
-          <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="mt-5 pt-4 border-t border-line">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-primary-soft">Perfil completado al {completionPct}%</span>
-              <Link href="/dashboard/perfil" className="text-xs text-white/70 hover:text-white underline">
+              <span className="text-xs font-medium text-muted">Perfil completado al {completionPct}%</span>
+              <Link href="/dashboard/perfil" className="text-xs font-semibold text-primary hover:text-primary-hi underline">
                 Completar
               </Link>
             </div>
-            <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
               <div
-                className="h-full bg-white/60 rounded-full transition-all"
+                className="h-full bg-primary rounded-full transition-[width]"
                 style={{ width: `${completionPct}%` }}
               />
             </div>
@@ -108,9 +108,9 @@ export default async function DashboardPage() {
         )}
 
         {/* Google Calendar status */}
-        <div className="mt-4 pt-4 border-t border-white/10">
+        <div className="mt-4 pt-4 border-t border-line">
           {hasGoogleCalendar ? (
-            <span className="inline-flex items-center gap-1.5 bg-white/15 text-white text-xs font-medium px-3 py-1.5 rounded-full">
+            <span className="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-primary-soft px-3 text-sm font-semibold text-primary">
               <span className="w-1.5 h-1.5 bg-primary rounded-full inline-block" />
               Google Calendar conectado
             </span>
@@ -123,11 +123,9 @@ export default async function DashboardPage() {
             >
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white/90 hover:text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-line-strong bg-surface px-3 text-sm font-semibold text-ink hover:bg-surface-2 transition-colors"
               >
-                {/* Punto pálido, no --pending: sobre el hero oscuro el ámbar
-                    oscuro no se distingue. */}
-                <span className="w-1.5 h-1.5 bg-pending-soft rounded-full inline-block" />
+                <span className="w-1.5 h-1.5 bg-pending rounded-full inline-block" />
                 Conectar Google Calendar
               </button>
             </form>
@@ -139,7 +137,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-3 gap-3">
         <Link
           href="/dashboard/turnos"
-          className="bg-white rounded-2xl border border-line p-4 text-center hover:border-primary hover:shadow-sm transition-all group"
+          className="bg-surface rounded-lg border border-line p-4 text-center hover:border-primary hover:shadow-sm transition-colors group"
         >
           <p className="text-2xl font-bold text-primary group-hover:scale-110 transition-transform inline-block">
             {upcomingCount}
@@ -148,7 +146,7 @@ export default async function DashboardPage() {
         </Link>
         <Link
           href="/dashboard/turnos"
-          className={`bg-white rounded-2xl border p-4 text-center hover:shadow-sm transition-all group ${
+          className={`bg-surface rounded-lg border p-4 text-center hover:shadow-sm transition-colors group ${
             pendingCount > 0 ? "border-pending bg-pending-soft/50" : "border-line"
           }`}
         >
@@ -159,7 +157,7 @@ export default async function DashboardPage() {
         </Link>
         <Link
           href="/dashboard/patients"
-          className="bg-white rounded-2xl border border-line p-4 text-center hover:border-primary hover:shadow-sm transition-all group"
+          className="bg-surface rounded-lg border border-line p-4 text-center hover:border-primary hover:shadow-sm transition-colors group"
         >
           <p className="text-2xl font-bold text-ink group-hover:scale-110 transition-transform inline-block">
             {patientsCount}

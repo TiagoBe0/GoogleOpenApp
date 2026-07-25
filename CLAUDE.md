@@ -47,6 +47,27 @@ Config en `.env` (no versionado). Plantilla en [.env.example](.env.example):
 `NEXTAUTH_URL`, `MP_ACCESS_TOKEN`/`MP_PUBLIC_KEY`/`MP_WEBHOOK_SECRET`.
 Nunca imprimir ni commitear estos valores.
 
+## Design System
+
+Leer [DESIGN.md](DESIGN.md) **antes** de cualquier decisión visual o de interfaz. Ahí
+viven la paleta, la tipografía, el espaciado y la dirección estética, con el fundamento
+de cada decisión. No desviarse sin aprobación explícita del usuario. En modo QA, marcar
+cualquier código que no respete el sistema.
+
+Tres reglas que ya se rompieron una vez y no deben volver a romperse:
+
+1. **Nunca poner `font-family` en una regla sin capa** en `globals.css` (por ejemplo
+   `body { }`). Las utilidades de Tailwind v4 viven en `@layer utilities` y el CSS sin
+   capa les gana sin importar la especificidad: la app terminó descargando Geist y
+   renderizando todo en Arial.
+2. **Nada de violeta ni índigo.** El acento es el verde `--primary`. Ver DESIGN.md para
+   el porqué (registro emocional y señal de interfaz generada por IA).
+3. **Mínimo 44px de alto en todo elemento interactivo.** No es gusto, es WCAG 2.5.5.
+
+Verificar cambios visuales **renderizando la pantalla**, no leyendo el CSS ni mirando
+que el server arranque. Un cambio en `next.config.ts` o en `globals.css` puede arrancar
+sin error y aun así romper los estilos.
+
 ## Skill routing
 
 Cuando el pedido calce con un skill, invocarlo con la tool Skill:

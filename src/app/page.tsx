@@ -14,10 +14,11 @@ export default async function Home() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">GoogleOpenApp</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-3">PsicoLink</h1>
         <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-          Regístrate con tu cuenta de Google y gestiona tus eventos de{" "}
-          <span className="font-semibold text-indigo-600">Google Calendar</span> desde un solo lugar.
+          Reservá turnos con tu psicólogo. Agenda{" "}
+          <span className="font-semibold text-indigo-600">sincronizada</span>, pago online y
+          confirmación del profesional, en un solo lugar.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
@@ -38,19 +39,19 @@ export default async function Home() {
             <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-            Login con Google
+            Turnos online
           </div>
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-            Google Calendar
+            Agenda sincronizada
           </div>
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-            Email + Password
+            Pago seguro
           </div>
         </div>
       </div>

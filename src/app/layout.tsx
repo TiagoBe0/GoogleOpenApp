@@ -6,8 +6,9 @@ import Providers from "./providers";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
-  title: "GoogleOpenApp — Registro con Google Calendar",
-  description: "Regístrate y vincula tu Google Calendar",
+  title: "PsicoLink — Turnos con tu psicólogo",
+  description:
+    "Reservá turnos con tu psicólogo: agenda sincronizada, pago online y confirmación del profesional.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

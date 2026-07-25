@@ -324,7 +324,7 @@ export default function WeekCalendar() {
                 </div>
               ))}
 
-              {/* PsicoApp appointments */}
+              {/* PsicoLink appointments */}
               {psicoApts.map((apt) => {
                 const pos = psicoEventToPixels(apt, day);
                 if (!pos) return null;

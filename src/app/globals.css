@@ -8,13 +8,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* layout.tsx loads Geist as --font-geist; the scaffold named a variable that
+     never existed, which left --font-sans (and the font-sans utility) empty. */
+  --font-sans: var(--font-geist);
 }
 
-
+/* No font-family here on purpose. Tailwind utilities live in @layer utilities,
+   and unlayered CSS outranks any layer regardless of specificity, so a
+   font-family rule on body silently overrode the Geist class layout.tsx sets
+   and the whole app rendered in Arial while still downloading the webfont. */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

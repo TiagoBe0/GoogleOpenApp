@@ -26,16 +26,16 @@ export default function TurnoActions({ id }: { id: string }) {
       <button
         onClick={() => handleAction("CANCELLED")}
         disabled={loading}
-        className="text-xs text-gray-400 hover:text-red-500 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50"
+        className="min-h-11 px-4 rounded-md border border-line-strong text-sm font-semibold text-muted hover:text-danger hover:border-danger hover:bg-danger-soft transition-colors disabled:opacity-50"
       >
         Rechazar
       </button>
       <button
         onClick={() => handleAction("CONFIRMED")}
         disabled={loading}
-        className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
+        className="min-h-11 px-4 rounded-md text-sm font-semibold text-white bg-primary hover:bg-primary-hi disabled:opacity-50 transition-colors"
       >
-        {loading ? "..." : "Confirmar"}
+        {loading ? "…" : "Confirmar"}
       </button>
     </div>
   );

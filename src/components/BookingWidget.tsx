@@ -16,6 +16,8 @@ interface Props {
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const WEEKDAYS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+const inputCls =
+  "min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary-soft";
 
 function daysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -123,14 +125,14 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
 
   if (done) {
     return (
-      <div className="rounded-2xl border border-[#7FA98A]/40 bg-[#7FA98A]/10 p-8 text-center">
-        <div className="w-14 h-14 bg-[#7FA98A] rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="rounded-lg border border-primary bg-primary-soft p-8">
+        <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-4">
           <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-[#2D4270]">¡Turno solicitado!</h3>
-        <p className="text-sm text-[#2D4270]/70 mt-1">El psicólogo confirmará tu turno a la brevedad.</p>
+        <h3 className="font-display text-2xl font-semibold text-ink">Turno solicitado</h3>
+        <p className="text-sm text-muted mt-1">El psicólogo confirmará tu turno a la brevedad.</p>
       </div>
     );
   }
@@ -138,18 +140,18 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
   return (
     <div className="space-y-6">
       {/* Calendar */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <div className="bg-surface rounded-lg border border-line p-5">
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-            <svg className="w-4 h-4 text-[#2D4270]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={prevMonth} aria-label="Mes anterior" className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-surface-2 transition-colors">
+            <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-[#2D4270] capitalize">
+          <span className="text-sm font-semibold text-ink capitalize">
             {MONTHS[viewMonth]} {viewYear}
           </span>
-          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-            <svg className="w-4 h-4 text-[#2D4270]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={nextMonth} aria-label="Mes siguiente" className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-surface-2 transition-colors">
+            <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -157,7 +159,7 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
 
         <div className="grid grid-cols-7 mb-2">
           {WEEKDAYS.map(d => (
-            <div key={d} className="text-center text-[10px] font-medium text-gray-400 uppercase py-1">{d}</div>
+            <div key={d} className="text-center text-[10px] font-semibold text-muted uppercase py-1">{d}</div>
           ))}
         </div>
 
@@ -174,12 +176,12 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
                 key={d}
                 disabled={isPast || isWeekend}
                 onClick={() => selectDay(d)}
-                className={`aspect-square rounded-lg text-sm font-medium transition-all ${
+                className={`aspect-square rounded-md text-sm font-semibold transition-colors ${
                   isPast || isWeekend
-                    ? "text-gray-300 cursor-not-allowed"
+                    ? "text-line-strong cursor-not-allowed"
                     : isSel
-                    ? "bg-[#2D4270] text-white"
-                    : "text-[#2D4270] hover:bg-[#8AACC8]/20"
+                    ? "bg-primary text-white"
+                    : "text-ink hover:bg-primary-soft hover:text-primary"
                 }`}
               >
                 {d}
@@ -191,28 +193,28 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
 
       {/* Time slots */}
       {selectedDate && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <h3 className="text-sm font-semibold text-[#2D4270] mb-3">
+        <div className="bg-surface rounded-lg border border-line p-5">
+          <h3 className="text-sm font-semibold text-ink mb-3">
             Horarios disponibles — {selectedDate.d}/{selectedDate.m}/{selectedDate.y}
           </h3>
           {loadingSlots ? (
             <div className="grid grid-cols-4 gap-2">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-9 bg-gray-100 rounded-lg animate-pulse" />
+                <div key={i} className="h-11 bg-surface-2 rounded-md animate-pulse" />
               ))}
             </div>
           ) : slots.length === 0 ? (
-            <p className="text-sm text-gray-400">No hay horarios disponibles para este día.</p>
+            <p className="text-sm text-muted">No hay horarios disponibles para este día.</p>
           ) : (
             <div className="grid grid-cols-4 gap-2">
               {slots.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSelectedSlot(s)}
-                  className={`py-2 rounded-lg text-sm font-medium transition-all border ${
+                  className={`min-h-11 rounded-md text-sm font-semibold transition-colors border ${
                     selectedSlot === s
-                      ? "bg-[#2D4270] text-white border-[#2D4270]"
-                      : "border-[#8AACC8]/40 text-[#2D4270] hover:bg-[#8AACC8]/20"
+                      ? "bg-primary text-white border-primary"
+                      : "border-line-strong text-ink hover:bg-primary-soft hover:border-primary"
                   }`}
                 >
                   {s}
@@ -225,36 +227,36 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
 
       {/* Contact form (anonymous only) + notes */}
       {selectedSlot && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+        <div className="bg-surface rounded-lg border border-line p-5 space-y-4">
           {!isRegistered && (
             <>
-              <h3 className="text-sm font-semibold text-[#2D4270]">Tus datos</h3>
+              <h3 className="text-sm font-semibold text-ink">Tus datos</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Nombre *</label>
+                  <label className="block text-xs font-semibold text-muted mb-1">Nombre *</label>
                   <input
                     value={patientName}
                     onChange={e => setPatientName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-[#2D4270] focus:outline-none focus:ring-2 focus:ring-[#8AACC8]/40"
+                    className={inputCls}
                     placeholder="Tu nombre completo"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Email *</label>
+                  <label className="block text-xs font-semibold text-muted mb-1">Email *</label>
                   <input
                     type="email"
                     value={patientEmail}
                     onChange={e => setPatientEmail(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-[#2D4270] focus:outline-none focus:ring-2 focus:ring-[#8AACC8]/40"
+                    className={inputCls}
                     placeholder="tu@email.com"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs text-gray-500 mb-1">Teléfono (opcional)</label>
+                  <label className="block text-xs font-semibold text-muted mb-1">Teléfono (opcional)</label>
                   <input
                     value={patientPhone}
                     onChange={e => setPatientPhone(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-[#2D4270] focus:outline-none focus:ring-2 focus:ring-[#8AACC8]/40"
+                    className={inputCls}
                     placeholder="+54 9 11 1234 5678"
                   />
                 </div>
@@ -263,24 +265,24 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
           )}
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Notas (opcional)</label>
+            <label className="block text-xs font-semibold text-muted mb-1">Notas (opcional)</label>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-[#2D4270] focus:outline-none focus:ring-2 focus:ring-[#8AACC8]/40 resize-none"
-              placeholder="Motivo de la consulta, información adicional..."
+              className={`${inputCls} resize-none py-2.5`}
+              placeholder="Motivo de la consulta, información adicional…"
             />
           </div>
 
           {error && (
-            <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-sm font-medium text-danger bg-danger-soft border border-danger rounded-md px-3 py-2">{error}</p>
           )}
 
           {profile.consultationFee && (
-            <div className="flex items-center justify-between text-sm rounded-lg bg-[#2D4270]/5 px-4 py-3">
-              <span className="text-[#2D4270]/70">Valor de la consulta</span>
-              <span className="font-semibold text-[#2D4270]">
+            <div className="flex items-center justify-between text-sm rounded-md bg-surface-2 px-4 py-3">
+              <span className="text-muted">Valor de la consulta</span>
+              <span className="font-semibold text-ink">
                 {profile.currency} {profile.consultationFee.toLocaleString("es-AR")}
               </span>
             </div>
@@ -289,9 +291,9 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
           <button
             onClick={handleBook}
             disabled={submitting}
-            className="w-full py-3 bg-[#2D4270] hover:bg-[#2D4270]/90 disabled:bg-[#2D4270]/50 text-white font-semibold text-sm rounded-xl transition-colors"
+            className="w-full min-h-11 bg-primary hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted text-white font-semibold text-sm rounded-md transition-colors"
           >
-            {submitting ? "Procesando..." : profile.consultationFee ? "Confirmar y pagar" : "Solicitar turno"}
+            {submitting ? "Procesando…" : profile.consultationFee ? "Confirmar y pagar" : "Solicitar turno"}
           </button>
         </div>
       )}

@@ -17,8 +17,8 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-1 mb-6">
-      <h1 className="text-xl font-bold text-gray-900">Mi perfil profesional</h1>
-      <p className="text-sm text-gray-500">Esta información es visible para tus pacientes.</p>
+      <h1 className="font-display text-3xl font-semibold text-ink">Mi perfil profesional</h1>
+      <p className="text-sm text-muted">Esta información es visible para tus pacientes.</p>
       <div className="pt-4">
         <ProfileForm
           initialUser={{ name: user?.name ?? "", email: user?.email ?? "", image: user?.image ?? null }}

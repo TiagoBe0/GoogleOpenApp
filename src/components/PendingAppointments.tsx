@@ -59,11 +59,11 @@ export default function PendingAppointments() {
     }
   }
 
-  if (loading) return <div className="h-24 bg-surface-2 rounded-2xl animate-pulse" />;
+  if (loading) return <div className="h-24 bg-surface-2 rounded-lg animate-pulse" />;
   if (appointments.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-pending overflow-hidden">
+    <div className="bg-surface rounded-lg border border-pending overflow-hidden">
       <div className="flex items-center gap-3 px-5 py-4 border-b border-pending bg-pending-soft">
         <div className="w-2 h-2 bg-pending rounded-full animate-pulse" />
         <h2 className="font-semibold text-pending text-sm">
@@ -78,38 +78,40 @@ export default function PendingAppointments() {
             : a.patient.email[0].toUpperCase();
 
           return (
-            <div key={a.id} className="px-5 py-4 flex items-center gap-4">
-              {a.patient.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={a.patient.image} alt="" className="w-10 h-10 rounded-full flex-shrink-0" />
-              ) : (
-                <div className="w-10 h-10 bg-primary-soft rounded-full flex items-center justify-center text-primary text-sm font-semibold flex-shrink-0">
-                  {initials}
+            <div key={a.id} className="px-5 py-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {a.patient.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.patient.image} alt="" className="w-10 h-10 rounded-full flex-shrink-0" />
+                ) : (
+                  <div className="w-10 h-10 bg-primary-soft rounded-full flex items-center justify-center text-primary text-sm font-semibold flex-shrink-0">
+                    {initials}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-ink text-sm truncate">
+                    {a.patient.name || a.patient.email}
+                  </p>
+                  <p className="text-xs text-muted mt-0.5">
+                    {d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" })} · {d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} · {a.duration} min
+                  </p>
+                  {a.notes && <p className="text-xs text-muted mt-0.5 truncate">Nota: {a.notes}</p>}
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-ink text-sm truncate">
-                  {a.patient.name || a.patient.email}
-                </p>
-                <p className="text-xs text-muted mt-0.5">
-                  {d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" })} · {d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} · {a.duration} min
-                </p>
-                {a.notes && <p className="text-xs text-muted mt-0.5 truncate">📝 {a.notes}</p>}
               </div>
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex gap-2 flex-shrink-0 sm:w-auto">
                 <button
                   onClick={() => handleAction(a.id, "CANCELLED")}
                   disabled={actionId === a.id}
-                  className="text-sm text-muted hover:text-danger px-4 min-h-11 rounded-lg border border-line hover:border-danger hover:bg-danger-soft transition-colors"
+                  className="flex-1 text-sm text-muted hover:text-danger px-4 min-h-11 rounded-md border border-line hover:border-danger hover:bg-danger-soft transition-colors sm:flex-none"
                 >
                   Rechazar
                 </button>
                 <button
                   onClick={() => handleAction(a.id, "CONFIRMED")}
                   disabled={actionId === a.id}
-                  className="text-sm font-medium text-white bg-primary hover:bg-primary-hi disabled:bg-primary-soft px-4 min-h-11 rounded-lg transition-colors"
+                  className="flex-1 text-sm font-semibold text-white bg-primary hover:bg-primary-hi disabled:bg-primary-soft px-4 min-h-11 rounded-md transition-colors sm:flex-none"
                 >
-                  {actionId === a.id ? "..." : "Confirmar"}
+                  {actionId === a.id ? "…" : "Confirmar"}
                 </button>
               </div>
             </div>

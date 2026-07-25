@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import AppointmentModal from "./AppointmentModal";
 
 interface CalendarEvent {
@@ -131,6 +132,8 @@ function psicoEventColor(status: string): string {
 }
 
 export default function WeekCalendar() {
+  const { data: session } = useSession();
+  const googleConnected = Boolean(session?.googleAccessToken);
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
   const [psicoApts, setPsicoApts] = useState<PsicoAppointment[]>([]);
@@ -143,12 +146,18 @@ export default function WeekCalendar() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
+      // Only hit Google Calendar when the account is actually connected.
+      // Otherwise the endpoint 403s on every week load and spams the console.
+      const gcalFetch = googleConnected
+        ? fetch(`/api/calendar/events?timeMin=${weekStart.toISOString()}&timeMax=${weekEnd.toISOString()}`)
+        : Promise.resolve(null);
+
       const [gcalRes, aptsRes] = await Promise.allSettled([
-        fetch(`/api/calendar/events?timeMin=${weekStart.toISOString()}&timeMax=${weekEnd.toISOString()}`),
+        gcalFetch,
         fetch("/api/appointments"),
       ]);
 
-      if (gcalRes.status === "fulfilled" && gcalRes.value.ok) {
+      if (gcalRes.status === "fulfilled" && gcalRes.value && gcalRes.value.ok) {
         const data = await gcalRes.value.json();
         setGoogleEvents(data.items ?? []);
       } else {
@@ -174,7 +183,7 @@ export default function WeekCalendar() {
     } finally {
       setLoading(false);
     }
-  }, [weekStart]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [weekStart, googleConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchAll();

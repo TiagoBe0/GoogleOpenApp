@@ -119,22 +119,19 @@ function VideoIcon() {
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="grid h-7 w-7 grid-cols-2 gap-0.5">
-        <span className={`rounded-[3px] ${dark ? "bg-white" : "bg-primary"}`} />
-        <span className="rounded-[3px] bg-info" />
-        <span className="rounded-[3px] bg-primary" />
-        <span className="rounded-[3px] bg-primary-soft" />
+      <div className={`flex h-8 w-8 items-center justify-center rounded-md ${dark ? "bg-white text-primary" : "bg-primary text-white"}`}>
+        <CalendarIcon />
       </div>
-      <span className={`font-display text-lg ${dark ? "text-white" : "text-ink"}`}>PsicoLink</span>
+      <span className={`font-display text-lg font-semibold ${dark ? "text-white" : "text-ink"}`}>PsicoLink</span>
     </div>
   );
 }
 
 function StatCard({ icon, value, label, detail, tone }: { icon: string; value: string; label: string; detail: string; tone: string }) {
   return (
-    <div className="rounded-[14px] border border-line bg-white p-5">
-      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-[10px] ${tone}`}>{icon}</div>
-      <div className="font-display text-3xl text-ink">{value}</div>
+    <div className="rounded-lg border border-line bg-surface p-5">
+      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-md ${tone}`}>{icon}</div>
+      <div className="font-display text-3xl font-semibold text-ink">{value}</div>
       <div className="mt-1 text-xs text-muted">{label}</div>
       <div className="mt-3 text-xs font-semibold text-primary">{detail}</div>
     </div>
@@ -146,7 +143,7 @@ function AppointmentItem({ appointment, onCancel, compact = false }: { appointme
 
   return (
     <div className="flex items-center gap-4 border-b border-line py-3 last:border-b-0 last:pb-0 first:pt-0">
-      <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-[10px] bg-surface-2">
+      <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-md bg-surface-2">
         <div className="font-display text-[22px] leading-none text-ink">{appointment.day}</div>
         <div className="text-[9px] font-semibold uppercase tracking-wide text-muted">{appointment.dayName}</div>
       </div>
@@ -154,12 +151,12 @@ function AppointmentItem({ appointment, onCancel, compact = false }: { appointme
         <div className="text-sm font-semibold text-ink">{appointment.time}</div>
         <div className="mt-0.5 truncate text-xs text-muted">{appointment.professional}</div>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-primary-soft px-2.5 py-1 text-[10px] font-semibold text-primary-hi">Online</span>
+          <span className="rounded-full bg-primary-soft px-2.5 py-1 text-[10px] font-semibold text-primary">Online</span>
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${status.className}`}>{status.label}</span>
         </div>
       </div>
       {!compact && appointment.status === "PENDING" && (
-        <button onClick={() => onCancel(appointment)} className="rounded-lg bg-danger-soft px-3 py-2 text-xs font-semibold text-danger hover:bg-danger-soft">
+        <button onClick={() => onCancel(appointment)} className="min-h-11 rounded-md bg-danger-soft px-3 text-xs font-semibold text-danger hover:bg-danger-soft">
           Cancelar
         </button>
       )}
@@ -298,9 +295,9 @@ export default function PatientDashboard({ patient }: Props) {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-bg p-6">
-        <div className="h-20 rounded-2xl bg-white" />
+        <div className="h-20 rounded-lg bg-surface" />
         <div className="mt-6 grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 rounded-2xl bg-white" />)}
+          {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 rounded-lg bg-surface" />)}
         </div>
       </div>
     );
@@ -320,7 +317,7 @@ export default function PatientDashboard({ patient }: Props) {
             <button
               key={item.id}
               onClick={() => setSection(item.id)}
-              className={`mb-0.5 flex min-h-11 w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-left text-sm font-medium transition ${
+              className={`mb-0.5 flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                 section === item.id ? "bg-primary text-white" : "text-muted hover:bg-surface hover:text-ink"
               }`}
             >
@@ -331,7 +328,7 @@ export default function PatientDashboard({ patient }: Props) {
           ))}
         </nav>
         <div className="border-t border-line p-3">
-          <button onClick={() => setSection("profile")} className="flex min-h-11 w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-left hover:bg-surface">
+          <button onClick={() => setSection("profile")} className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left hover:bg-surface transition-colors">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary-hi">
               {initials(patient.name, patient.email)}
             </div>
@@ -344,12 +341,12 @@ export default function PatientDashboard({ patient }: Props) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-40 flex h-[60px] shrink-0 items-center justify-between border-b border-line bg-white px-4 md:px-8">
+        <header className="sticky top-0 z-40 flex h-[60px] shrink-0 items-center justify-between border-b border-line bg-surface px-4 md:px-8">
           <div className="md:hidden"><Logo /></div>
           <span className="hidden text-sm font-semibold text-ink md:block">{SECTION_TITLES[section]}</span>
           <div className="flex items-center gap-2">
             <div className="relative flex">
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-line text-muted hover:border-info hover:text-ink">
+              <button className="flex h-11 w-11 items-center justify-center rounded-md border border-line text-muted hover:border-primary hover:text-ink transition-colors">
                 <BellIcon />
               </button>
               {pendingCount > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full border-2 border-white bg-danger" />}
@@ -357,14 +354,14 @@ export default function PatientDashboard({ patient }: Props) {
             <button
               onClick={() => setShowBooking(true)}
               disabled={!psychologist}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted"
             >
               <PlusIcon /> Nuevo turno
             </button>
           </div>
         </header>
 
-        <div className="flex gap-2 overflow-x-auto border-b border-line bg-white px-4 py-2 md:hidden">
+        <div className="flex gap-2 overflow-x-auto border-b border-line bg-surface px-4 py-2 md:hidden">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -380,12 +377,12 @@ export default function PatientDashboard({ patient }: Props) {
           {section === "home" && (
             <>
               {upcoming[0] ? (
-                <section className="relative mb-7 overflow-hidden rounded-[18px] bg-gradient-to-br from-primary to-primary-hi px-6 py-7 text-white md:flex md:items-center md:gap-6">
-                  <div className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-[14px] bg-white/15 text-2xl md:mb-0">📅</div>
+                <section className="relative mb-7 rounded-lg border border-line bg-surface px-6 py-7 md:flex md:items-center md:gap-6">
+                  <div className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-md bg-primary-soft text-2xl md:mb-0">📅</div>
                   <div className="relative z-10 flex-1">
-                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-white/55">Próxima sesión</div>
-                    <h1 className="font-display text-2xl">{upcoming[0].dayName} {upcoming[0].day} de {upcoming[0].month} · {upcoming[0].time}</h1>
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-white/70">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Próxima sesión</div>
+                    <h1 className="font-display text-2xl font-semibold text-ink">{upcoming[0].dayName} {upcoming[0].day} de {upcoming[0].month} · {upcoming[0].time}</h1>
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted">
                       <span>{upcoming[0].professional}</span>
                       <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                       <span>Online</span>
@@ -393,15 +390,15 @@ export default function PatientDashboard({ patient }: Props) {
                     </div>
                   </div>
                   <div className="relative z-10 mt-5 flex gap-2 md:mt-0">
-                    <button className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-ink"><VideoIcon /> Unirse</button>
-                    {upcoming[0].status === "PENDING" && <button onClick={() => setCancelTarget(upcoming[0])} className="rounded-lg border border-white/35 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10">Cancelar</button>}
+                    <button className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hi transition-colors"><VideoIcon /> Unirse</button>
+                    {upcoming[0].status === "PENDING" && <button onClick={() => setCancelTarget(upcoming[0])} className="min-h-11 rounded-md border border-line-strong px-4 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-ink transition-colors">Cancelar</button>}
                   </div>
                 </section>
               ) : (
-                <section className="mb-7 rounded-[18px] border border-dashed border-info bg-white p-8 text-center">
-                  <h1 className="font-display text-2xl text-ink">No tenés turnos próximos</h1>
+                <section className="mb-7 rounded-lg border border-dashed border-line-strong bg-surface p-8 text-center">
+                  <h1 className="font-display text-2xl font-semibold text-ink">No tenés turnos próximos</h1>
                   <p className="mt-2 text-sm text-muted">Cuando agendes un turno, aparecerá acá como próxima sesión.</p>
-                  <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white disabled:bg-surface-2 disabled:text-muted">Agendar turno</button>
+                  <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="mt-5 min-h-11 rounded-md bg-primary px-5 text-sm font-semibold text-white disabled:bg-surface-2 disabled:text-muted">Agendar turno</button>
                 </section>
               )}
 
@@ -416,20 +413,20 @@ export default function PatientDashboard({ patient }: Props) {
                 <div>
                   <div className="mb-4 flex items-center justify-between">
                     <h2 className="font-display text-xl text-ink">Próximos turnos</h2>
-                    <button onClick={() => setSection("agenda")} className="text-xs font-semibold text-info hover:text-ink">Ver todos →</button>
+                    <button onClick={() => setSection("agenda")} className="text-xs font-semibold text-primary hover:text-primary-hi">Ver todos →</button>
                   </div>
-                  <div className="rounded-[14px] border border-line bg-white p-5">
-                    {loading ? <div className="h-24 rounded-xl bg-bg" /> : upcoming.length ? upcoming.slice(0, 3).map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="Sin turnos próximos." />}
+                  <div className="rounded-lg border border-line bg-surface p-5">
+                    {loading ? <div className="h-24 rounded-lg bg-bg" /> : upcoming.length ? upcoming.slice(0, 3).map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="Sin turnos próximos." />}
                   </div>
                 </div>
                 <div>
                   <div className="mb-4 flex items-center justify-between">
                     <h2 className="font-display text-xl text-ink">Mi psicólogo</h2>
-                    {psychologist && <button onClick={handleUnlink} disabled={unlinking} className="text-xs font-semibold text-danger">{unlinking ? "..." : "Desvincular"}</button>}
+                    {psychologist && <button onClick={handleUnlink} disabled={unlinking} className="text-xs font-semibold text-danger">{unlinking ? "…" : "Desvincular"}</button>}
                   </div>
-                  <div className="rounded-[14px] border border-line bg-white p-5">
+                  <div className="rounded-lg border border-line bg-surface p-5">
                     {psychologist === undefined ? (
-                      <div className="h-20 rounded-xl bg-bg" />
+                      <div className="h-20 rounded-lg bg-bg" />
                     ) : psychologist ? (
                       <div className="flex items-center gap-4">
                         <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-sm font-semibold text-ink">
@@ -441,14 +438,14 @@ export default function PatientDashboard({ patient }: Props) {
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-ink">{psychologist.name || "Sin nombre"}</p>
                           <p className="truncate text-xs text-muted">{psychologist.email}</p>
-                          <p className="mt-1 text-xs font-semibold text-primary">● Disponible</p>
+                          <p className="mt-1 text-xs font-semibold text-primary">Disponible</p>
                         </div>
-                        <button onClick={() => setSection("profile")} className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-muted">Ver</button>
+                        <button onClick={() => setSection("profile")} className="min-h-11 rounded-md border border-line px-3 text-xs font-semibold text-muted hover:bg-surface-2 transition-colors">Ver</button>
                       </div>
                     ) : (
                       <EmptyState
                         label="No tenés un psicólogo vinculado todavía."
-                        action={<button onClick={() => setShowLinkForm(true)} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Vincular psicólogo</button>}
+                        action={<button onClick={() => setShowLinkForm(true)} className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white">Vincular psicólogo</button>}
                       />
                     )}
                   </div>
@@ -461,11 +458,11 @@ export default function PatientDashboard({ patient }: Props) {
             <>
               <div className="mb-5 flex items-center justify-between">
                 <h1 className="font-display text-xl text-ink">Mis turnos</h1>
-                <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:bg-surface-2 disabled:text-muted"><PlusIcon /> Agendar nuevo</button>
+                <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white disabled:bg-surface-2 disabled:text-muted"><PlusIcon /> Agendar nuevo</button>
               </div>
-              {success && <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{success}</div>}
-              <div className="rounded-[14px] border border-line bg-white p-5">
-                {loading ? <div className="h-24 rounded-xl bg-bg" /> : upcoming.length ? upcoming.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="No tenés turnos próximos." />}
+              {success && <div className="mb-4 rounded-md border border-primary bg-primary-soft px-4 py-3 text-sm font-medium text-primary">{success}</div>}
+              <div className="rounded-lg border border-line bg-surface p-5">
+                {loading ? <div className="h-24 rounded-lg bg-bg" /> : upcoming.length ? upcoming.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="No tenés turnos próximos." />}
               </div>
             </>
           )}
@@ -475,9 +472,9 @@ export default function PatientDashboard({ patient }: Props) {
               <div className="mb-5 flex items-center justify-between">
                 <h1 className="font-display text-xl text-ink">Historial de sesiones</h1>
               </div>
-              <div className="overflow-hidden rounded-[14px] border border-line bg-white">
+              <div className="overflow-hidden rounded-lg border border-line bg-surface">
                 {history.length ? (
-                  <div className="divide-y divide-[#E2E8F0]">
+                  <div className="divide-y divide-line px-5">
                     {history.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} compact />)}
                   </div>
                 ) : <EmptyState label="Todavía no hay historial." />}
@@ -504,7 +501,7 @@ export default function PatientDashboard({ patient }: Props) {
                   <StatCard icon="⏳" value={`${currency} ${totalPending.toLocaleString("es-AR")}`} label="Pendiente" detail={`${pending.length} en proceso`} tone="bg-pending-soft" />
                   <StatCard icon="✕" value={String(failed.length)} label="Fallidos" detail={`${failed.length} cobro${failed.length !== 1 ? "s" : ""} fallido${failed.length !== 1 ? "s" : ""}`} tone="bg-danger-soft" />
                 </section>
-                <div className="rounded-[14px] border border-line bg-white divide-y divide-[#E2E8F0]">
+                <div className="rounded-lg border border-line bg-surface divide-y divide-line">
                   {withPayment.length === 0 ? (
                     <EmptyState label="No hay pagos registrados todavía." />
                   ) : withPayment.map((a) => {
@@ -516,10 +513,10 @@ export default function PatientDashboard({ patient }: Props) {
                       rejected: { label: "Rechazado", className: "bg-danger-soft text-danger" },
                       cancelled: { label: "Cancelado", className: "bg-danger-soft text-danger" },
                     };
-                    const ps = a.paymentStatus ? (psMap[a.paymentStatus] ?? { label: a.paymentStatus, className: "bg-gray-100 text-gray-600" }) : { label: "Sin pagar", className: "bg-gray-100 text-gray-500" };
+                    const ps = a.paymentStatus ? (psMap[a.paymentStatus] ?? { label: a.paymentStatus, className: "bg-surface-2 text-muted" }) : { label: "Sin pagar", className: "bg-surface-2 text-muted" };
                     return (
                       <div key={a.id} className="flex items-center gap-4 px-5 py-4">
-                        <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-[10px] bg-surface-2">
+                        <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-md bg-surface-2">
                           <div className="font-display text-[22px] leading-none text-ink">{d.getDate()}</div>
                           <div className="text-[9px] font-semibold uppercase tracking-wide text-muted">{d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "")}</div>
                         </div>
@@ -531,7 +528,7 @@ export default function PatientDashboard({ patient }: Props) {
                         <div className="text-right">
                           <div className="font-semibold text-ink text-sm">{a.currency} {a.amount?.toLocaleString("es-AR")}</div>
                           {a.preferenceId && !a.paymentStatus && (
-                            <a href={`https://www.mercadopago.com.ar/checkout/v1/redirect?preference-id=${a.preferenceId}`} target="_blank" rel="noopener noreferrer" className="mt-1 block text-[10px] font-semibold text-info hover:text-ink">
+                            <a href={`https://www.mercadopago.com.ar/checkout/v1/redirect?preference-id=${a.preferenceId}`} target="_blank" rel="noopener noreferrer" className="mt-1 block text-[10px] font-semibold text-primary hover:text-primary-hi">
                               Pagar →
                             </a>
                           )}
@@ -550,8 +547,8 @@ export default function PatientDashboard({ patient }: Props) {
                 <h1 className="font-display text-xl text-ink">Mi perfil</h1>
               </div>
               <div className="grid gap-5 xl:grid-cols-2">
-                <div className="rounded-[14px] border border-line bg-white p-6">
-                  <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-gradient-to-br from-primary-soft to-primary-soft font-display text-3xl text-ink">
+                <div className="rounded-lg border border-line bg-surface p-6">
+                  <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary-soft font-display text-3xl text-primary">
                     {initials(patient.name, patient.email)}
                   </div>
                   <div className="font-display text-xl text-ink">{patient.name || "Paciente"}</div>
@@ -569,29 +566,29 @@ export default function PatientDashboard({ patient }: Props) {
                   </div>
                 </div>
                 <div className="space-y-5">
-                  <div className="rounded-[14px] border border-line bg-white p-5">
+                  <div className="rounded-lg border border-line bg-surface p-5">
                     <h2 className="mb-3 font-display text-lg text-ink">Mi psicólogo</h2>
                     {psychologist ? (
                       <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-ink">{initials(psychologist.name, psychologist.email)}</div>
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">{initials(psychologist.name, psychologist.email)}</div>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-ink">{psychologist.name || "Sin nombre"}</p>
                           <p className="truncate text-xs text-muted">{psychologist.email}</p>
                         </div>
-                        <button onClick={handleUnlink} disabled={unlinking} className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-danger">{unlinking ? "..." : "Desvincular"}</button>
+                        <button onClick={handleUnlink} disabled={unlinking} className="min-h-11 rounded-md border border-line px-3 text-xs font-semibold text-danger hover:bg-danger-soft transition-colors">{unlinking ? "…" : "Desvincular"}</button>
                       </div>
                     ) : (
                       <form onSubmit={handleLink} className="space-y-3">
-                        <input value={linkEmail} onChange={(e) => { setLinkEmail(e.target.value); setLinkError(""); }} type="email" required placeholder="email del psicólogo" className="w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-info" />
+                        <input value={linkEmail} onChange={(e) => { setLinkEmail(e.target.value); setLinkError(""); }} type="email" required placeholder="email del psicólogo" className="min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft" />
                         {linkError && <p className="text-sm text-danger">{linkError}</p>}
-                        <button disabled={linking} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">{linking ? "Buscando..." : "Vincular"}</button>
+                        <button disabled={linking} className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white">{linking ? "Buscando…" : "Vincular"}</button>
                       </form>
                     )}
                   </div>
                   <ReviewsPanel canReview={!!psychologist} title="Calificaciones" />
-                  <div className="rounded-[14px] border border-line bg-white p-5">
+                  <div className="rounded-lg border border-line bg-surface p-5">
                     <h2 className="mb-3 font-display text-lg text-ink">Seguridad</h2>
-                    <button onClick={() => signOut({ callbackUrl: "/login" })} className="rounded-lg bg-danger-soft px-4 py-2 text-sm font-semibold text-danger">Cerrar sesión</button>
+                    <button onClick={() => signOut({ callbackUrl: "/login" })} className="min-h-11 rounded-md bg-danger-soft px-4 text-sm font-semibold text-danger">Cerrar sesión</button>
                   </div>
                 </div>
               </div>
@@ -602,15 +599,15 @@ export default function PatientDashboard({ patient }: Props) {
 
       {showLinkForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[18px] border border-line bg-white p-6 shadow-2xl">
-            <h2 className="font-display text-xl text-ink">Vincular psicólogo</h2>
+          <div className="w-full max-w-sm rounded-lg border border-line bg-surface p-6 shadow-2xl">
+            <h2 className="font-display text-xl font-semibold text-ink">Vincular psicólogo</h2>
             <p className="mt-1 text-sm text-muted">Ingresá el email del profesional registrado.</p>
             <form onSubmit={handleLink} className="mt-5 space-y-3">
-              <input value={linkEmail} onChange={(e) => { setLinkEmail(e.target.value); setLinkError(""); }} type="email" required placeholder="psicologo@email.com" className="w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-info" />
+              <input value={linkEmail} onChange={(e) => { setLinkEmail(e.target.value); setLinkError(""); }} type="email" required placeholder="psicologo@email.com" className="min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft" />
               {linkError && <p className="text-sm text-danger">{linkError}</p>}
               <div className="flex gap-2">
-                <button type="button" onClick={() => setShowLinkForm(false)} className="flex-1 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted">Cancelar</button>
-                <button disabled={linking} className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">{linking ? "Buscando..." : "Vincular"}</button>
+                <button type="button" onClick={() => setShowLinkForm(false)} className="min-h-11 flex-1 rounded-md border border-line px-4 text-sm font-semibold text-muted">Cancelar</button>
+                <button disabled={linking} className="min-h-11 flex-1 rounded-md bg-primary px-4 text-sm font-semibold text-white">{linking ? "Buscando…" : "Vincular"}</button>
               </div>
             </form>
           </div>
@@ -619,15 +616,15 @@ export default function PatientDashboard({ patient }: Props) {
 
       {cancelTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[18px] border border-line bg-white p-7 shadow-2xl">
+          <div className="w-full max-w-md rounded-lg border border-line bg-surface p-7 shadow-2xl">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-pending-soft text-xl">⚠</div>
-            <h2 className="text-center font-display text-xl text-ink">Cancelar turno</h2>
+            <h2 className="text-center font-display text-xl font-semibold text-ink">Cancelar turno</h2>
             <p className="mt-2 text-center text-sm leading-6 text-muted">
               ¿Querés cancelar la sesión del <strong>{cancelTarget.dayName} {cancelTarget.day} de {cancelTarget.month}</strong> a las <strong>{cancelTarget.time.split(" ")[0]}</strong>?
             </p>
             <div className="mt-5 flex gap-2">
-              <button onClick={() => setCancelTarget(null)} className="flex-1 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-muted">Mantener turno</button>
-              <button onClick={confirmCancel} className="flex-1 rounded-lg bg-danger-soft px-4 py-2.5 text-sm font-semibold text-danger">Sí, cancelar</button>
+              <button onClick={() => setCancelTarget(null)} className="min-h-11 flex-1 rounded-md border border-line px-4 text-sm font-semibold text-muted">Mantener turno</button>
+              <button onClick={confirmCancel} className="min-h-11 flex-1 rounded-md bg-danger-soft px-4 text-sm font-semibold text-danger">Sí, cancelar</button>
             </div>
           </div>
         </div>
@@ -635,11 +632,11 @@ export default function PatientDashboard({ patient }: Props) {
 
       {cancelledMessage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[18px] border border-line bg-white p-7 text-center shadow-2xl">
+          <div className="w-full max-w-md rounded-lg border border-line bg-surface p-7 text-center shadow-2xl">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-xl">✓</div>
-            <h2 className="font-display text-xl text-ink">Turno cancelado</h2>
+            <h2 className="font-display text-xl font-semibold text-ink">Turno cancelado</h2>
             <p className="mt-2 text-sm text-muted">Tu turno fue cancelado correctamente.</p>
-            <button onClick={() => setCancelledMessage(false)} className="mt-5 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white">Entendido</button>
+            <button onClick={() => setCancelledMessage(false)} className="mt-5 min-h-11 w-full rounded-md bg-primary px-4 text-sm font-semibold text-white">Entendido</button>
           </div>
         </div>
       )}

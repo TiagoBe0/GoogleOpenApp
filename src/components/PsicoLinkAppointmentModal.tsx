@@ -137,29 +137,28 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-[#F4F6FA] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 p-4 backdrop-blur-sm">
+      <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-lg border border-line bg-bg shadow-2xl">
+        <div className="flex items-center justify-between border-b border-line bg-surface px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-8 w-8 grid-cols-2 gap-0.5">
-              <span className="rounded-[3px] bg-[#2D4270]" />
-              <span className="rounded-[3px] bg-[#8AACC8]" />
-              <span className="rounded-[3px] bg-[#7FA98A]" />
-              <span className="rounded-[3px] bg-[#D8EAF7]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
             <div>
-              <p className="font-serif text-lg text-[#2D4270]">PsicoLink</p>
-              <p className="text-xs text-[#8A96A8]">Agendar turno</p>
+              <p className="font-display text-lg font-semibold text-ink">PsicoLink</p>
+              <p className="text-xs text-muted">Agendar turno</p>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100">
+          <button onClick={onClose} className="min-h-11 rounded-md px-3 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-ink transition-colors">
             Cerrar
           </button>
         </div>
 
         <div className="grid gap-4 p-5 lg:grid-cols-[240px_1fr_220px]">
-          <aside className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[#D8EAF7] text-sm font-semibold text-[#2D4270]">
+          <aside className="rounded-lg border border-line bg-surface p-5">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-sm font-semibold text-primary">
               {psychologist.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={psychologist.image} alt="" className="h-full w-full object-cover" />
@@ -167,44 +166,46 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
                 initials(psychologist.name, psychologist.email)
               )}
             </div>
-            <h2 className="font-serif text-lg text-[#2D4270]">{psychologist.name || "Psicólogo"}</h2>
-            <p className="mt-1 text-xs text-[#8A96A8]">{psychologist.email}</p>
-            <span className="mt-4 inline-flex rounded-full bg-[#D0E8D8] px-3 py-1 text-xs font-semibold text-[#557C5F]">
+            <h2 className="font-display text-lg font-semibold text-ink">{psychologist.name || "Psicólogo"}</h2>
+            <p className="mt-1 text-xs text-muted">{psychologist.email}</p>
+            <span className="mt-4 inline-flex rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">
               Profesional vinculado
             </span>
-            <div className="my-4 h-px bg-[#E2E8F0]" />
-            <div className="rounded-xl bg-[#F4F6FA] p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8A96A8]">Resumen</p>
+            <div className="my-4 h-px bg-line" />
+            <div className="rounded-md bg-surface-2 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">Resumen</p>
               {selectedDate && selectedSlot ? (
                 <div className="mt-2 space-y-1">
-                  <p className="text-sm font-semibold text-[#2D4270]">{dateLabel}</p>
-                  <p className="text-sm font-semibold text-[#8AACC8]">
+                  <p className="text-sm font-semibold text-ink">{dateLabel}</p>
+                  <p className="text-sm font-semibold text-primary">
                     {selectedSlot.label} - {formatSlotEnd(selectedSlot)}
                   </p>
-                  <p className="text-xs text-[#8A96A8]">{selectedSlot.mode === "online" ? "Online" : "Presencial"}</p>
+                  <p className="text-xs text-muted">{selectedSlot.mode === "online" ? "Online" : "Presencial"}</p>
                 </div>
               ) : (
-                <p className="mt-2 text-xs italic text-[#8A96A8]">Elegí fecha y horario para continuar.</p>
+                <p className="mt-2 text-xs italic text-muted">Elegí fecha y horario para continuar.</p>
               )}
             </div>
           </aside>
 
-          <section className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
+          <section className="rounded-lg border border-line bg-surface p-5">
             <div className="mb-5 flex items-center justify-between gap-3">
-              <h2 className="font-serif text-2xl text-[#2D4270]">
+              <h2 className="font-display text-2xl font-semibold text-ink">
                 {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
               </h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
                   disabled={!canGoBack}
-                  className="h-9 w-9 rounded-lg border border-[#E2E8F0] bg-[#F4F6FA] text-[#2D4270] disabled:opacity-30"
+                  aria-label="Mes anterior"
+                  className="h-11 w-11 rounded-md border border-line-strong bg-surface text-ink hover:bg-surface-2 disabled:opacity-30 transition-colors"
                 >
                   ‹
                 </button>
                 <button
                   onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
-                  className="h-9 w-9 rounded-lg border border-[#E2E8F0] bg-[#F4F6FA] text-[#2D4270]"
+                  aria-label="Mes siguiente"
+                  className="h-11 w-11 rounded-md border border-line-strong bg-surface text-ink hover:bg-surface-2 transition-colors"
                 >
                   ›
                 </button>
@@ -213,7 +214,7 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
 
             <div className="grid grid-cols-7 gap-1">
               {CALENDAR_DAYS.map((day) => (
-                <div key={day} className="pb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[#8A96A8]">
+                <div key={day} className="pb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted">
                   {day}
                 </div>
               ))}
@@ -233,30 +234,30 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
                       setSelectedSlot(null);
                       setError("");
                     }}
-                    className={`relative flex aspect-square items-center justify-center rounded-xl border-2 text-sm font-medium transition-colors ${
+                    className={`relative flex aspect-square items-center justify-center rounded-md border text-sm font-semibold transition-colors ${
                       selected
-                        ? "border-[#2D4270] bg-[#2D4270] text-white"
+                        ? "border-primary bg-primary text-white"
                         : cell.past
-                          ? "border-transparent text-slate-200"
-                          : "border-transparent bg-[#F4F6FA] text-[#2D4270] hover:border-[#8AACC8] hover:bg-[#D8EAF7]"
-                    } ${isToday && !selected ? "border-[#8AACC8]" : ""}`}
+                          ? "border-transparent text-line-strong"
+                          : "border-transparent bg-surface-2 text-ink hover:border-primary hover:bg-primary-soft"
+                    } ${isToday && !selected ? "border-primary" : ""}`}
                   >
                     {cell.day}
-                    {!cell.past && <span className={`absolute bottom-1.5 h-1.5 w-1.5 rounded-full ${selected ? "bg-white/70" : "bg-[#7FA98A]"}`} />}
+                    {!cell.past && <span className={`absolute bottom-1.5 h-1.5 w-1.5 rounded-full ${selected ? "bg-white/70" : "bg-primary"}`} />}
                   </button>
                 );
               })}
             </div>
           </section>
 
-          <aside className="rounded-2xl border border-[#E2E8F0] bg-white">
-            <div className="border-b border-[#E2E8F0] px-4 py-4">
-              <h2 className="font-serif text-base text-[#2D4270]">Horarios</h2>
-              <p className="text-xs text-[#8A96A8]">{dateLabel}</p>
+          <aside className="rounded-lg border border-line bg-surface">
+            <div className="border-b border-line px-4 py-4">
+              <h2 className="font-display text-base font-semibold text-ink">Horarios</h2>
+              <p className="text-xs text-muted">{dateLabel}</p>
             </div>
             <div className="max-h-[420px] space-y-2 overflow-y-auto p-3">
               {!selectedDate ? (
-                <p className="px-3 py-10 text-center text-sm leading-6 text-[#8A96A8]">Seleccioná un día para ver los horarios disponibles.</p>
+                <p className="px-3 py-10 text-center text-sm leading-6 text-muted">Seleccioná un día para ver los horarios disponibles.</p>
               ) : (
                 SLOTS.map((slot) => {
                   const selected = selectedSlot?.id === slot.id;
@@ -268,16 +269,16 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
                         setSelectedSlot(slot);
                         setError("");
                       }}
-                      className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
-                        selected ? "border-[#2D4270] bg-[#EEF2FA]" : "border-[#E2E8F0] bg-[#F4F6FA] hover:border-[#8AACC8] hover:bg-[#D8EAF7]"
+                      className={`w-full min-h-11 rounded-md border px-3 py-3 text-left transition-colors ${
+                        selected ? "border-primary bg-primary-soft" : "border-line bg-surface-2 hover:border-primary hover:bg-primary-soft"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-[#2D4270]">
+                        <span className="text-sm font-semibold text-ink">
                           {slot.label} - {formatSlotEnd(slot)}
                         </span>
                       </div>
-                      <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${slot.mode === "online" ? "bg-[#D0E8D8] text-[#557C5F]" : "bg-[#D8EAF7] text-[#567A98]"}`}>
+                      <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${slot.mode === "online" ? "bg-primary-soft text-primary" : "bg-info/10 text-info"}`}>
                         {slot.mode === "online" ? "Online" : "Presencial"}
                       </span>
                     </button>
@@ -288,27 +289,27 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
           </aside>
         </div>
 
-        <div className="border-t border-[#E2E8F0] bg-white px-5 py-4">
+        <div className="border-t border-line bg-surface px-5 py-4">
           <div className="mx-auto flex max-w-5xl flex-col gap-3 md:flex-row md:items-end">
             <label className="flex-1">
-              <span className="mb-1 block text-xs font-semibold text-[#1C2940]">Motivo o comentario opcional</span>
+              <span className="mb-1 block text-xs font-semibold text-ink">Motivo o comentario opcional</span>
               <textarea
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ej: seguimiento, primera consulta..."
-                className="w-full resize-none rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm text-slate-900 focus:border-[#8AACC8] focus:outline-none focus:ring-2 focus:ring-[#8AACC8]/20"
+                placeholder="Ej: seguimiento, primera consulta…"
+                className="w-full resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
               />
             </label>
             <div className="min-w-60">
-              {error && <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+              {error && <p className="mb-2 rounded-md border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>}
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={!selectedDate || !selectedSlot || loading}
-                className="w-full rounded-xl bg-[#2D4270] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-[#1F3060] disabled:bg-slate-200 disabled:text-slate-400"
+                className="w-full min-h-11 rounded-md bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted"
               >
-                {loading ? "Solicitando..." : "Solicitar turno"}
+                {loading ? "Solicitando…" : "Solicitar turno"}
               </button>
             </div>
           </div>

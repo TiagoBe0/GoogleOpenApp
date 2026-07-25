@@ -55,7 +55,7 @@ export default function DashboardNav() {
           <Link
             key={href}
             href={href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
               ${active
                 ? "bg-primary text-white shadow-sm"
                 : "text-muted hover:bg-surface-2 hover:text-ink"

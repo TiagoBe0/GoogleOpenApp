@@ -186,7 +186,7 @@ export default function WeekCalendar() {
   }, [weekStart, googleConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetchAll();
+    void Promise.resolve().then(fetchAll);
   }, [fetchAll]);
 
   const today = new Date();
@@ -206,20 +206,21 @@ export default function WeekCalendar() {
   const hasAnyEvents = googleEvents.length > 0 || psicoApts.length > 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-line overflow-hidden">
+    <div className="bg-surface rounded-lg border border-line overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-line">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setWeekStart(getWeekStart(new Date()))}
-            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-line hover:bg-surface-2 transition-colors"
+            className="min-h-11 rounded-md border border-line-strong px-3 text-xs font-semibold text-ink hover:bg-surface-2 transition-colors"
           >
             Hoy
           </button>
           <div className="flex items-center">
             <button
               onClick={() => setWeekStart(addDays(weekStart, -7))}
-              className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
+              aria-label="Semana anterior"
+              className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
             >
               <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -227,7 +228,8 @@ export default function WeekCalendar() {
             </button>
             <button
               onClick={() => setWeekStart(addDays(weekStart, 7))}
-              className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
+              aria-label="Semana siguiente"
+              className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
             >
               <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -369,7 +371,7 @@ export default function WeekCalendar() {
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     style={{ top: pos.top, height: pos.height }}
-                    className={`absolute left-0.5 right-0.5 ${color} text-white rounded-lg px-1.5 py-1 overflow-hidden z-10 hover:brightness-110 transition-all`}
+                    className={`absolute left-0.5 right-0.5 ${color} text-white rounded-lg px-1.5 py-1 overflow-hidden z-10 hover:brightness-110 transition-colors`}
                   >
                     <p className="text-[11px] font-semibold truncate leading-tight">
                       {event.summary}

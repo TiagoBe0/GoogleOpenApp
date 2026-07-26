@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import PsicoLinkAppointmentModal from "@/components/PsicoLinkAppointmentModal";
+import BrowsePsychologists from "@/components/BrowsePsychologists";
 import ReviewsPanel from "@/components/ReviewsPanel";
 
 interface Patient {
@@ -43,10 +44,11 @@ interface Props {
   patient: Patient;
 }
 
-type Section = "home" | "agenda" | "history" | "payments" | "profile";
+type Section = "home" | "browse" | "agenda" | "history" | "payments" | "profile";
 
 const SECTION_TITLES: Record<Section, string> = {
   home: "Inicio",
+  browse: "Navegar",
   agenda: "Mis turnos",
   history: "Historial",
   payments: "Pagos",
@@ -98,6 +100,10 @@ function HistoryIcon() {
 
 function CardIcon() {
   return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.4" /><path d="M1 7h14" stroke="currentColor" strokeWidth="1.4" /><circle cx="4.5" cy="10" r="1" fill="currentColor" /></svg>;
+}
+
+function SearchIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" /><path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>;
 }
 
 function UserIcon() {
@@ -286,6 +292,7 @@ export default function PatientDashboard({ patient }: Props) {
 
   const navItems: Array<{ id: Section; label: string; icon: React.ReactNode; badge?: number }> = [
     { id: "home", label: "Inicio", icon: <HomeIcon /> },
+    { id: "browse", label: "Navegar", icon: <SearchIcon /> },
     { id: "agenda", label: "Mis turnos", icon: <CalendarIcon />, badge: upcoming.length || undefined },
     { id: "history", label: "Historial", icon: <HistoryIcon /> },
     { id: "payments", label: "Pagos", icon: <CardIcon />, badge: pendingCount || undefined },
@@ -451,6 +458,31 @@ export default function PatientDashboard({ patient }: Props) {
                   </div>
                 </div>
               </section>
+            </>
+          )}
+
+          {section === "browse" && (
+            <>
+              <div className="mb-5">
+                <h1 className="font-display text-xl text-ink">Navegar profesionales</h1>
+                <p className="mt-1 text-sm text-muted">
+                  {psychologist
+                    ? "Mirá la oferta disponible. Para cambiar de profesional, primero desvinculate desde Inicio."
+                    : "Elegí a quién querés como tu profesional de cabecera."}
+                </p>
+              </div>
+              <BrowsePsychologists
+                currentPsychologistId={psychologist?.id ?? null}
+                onLinked={() => {
+                  // Releer del servidor en vez de adivinar el estado local:
+                  // el vínculo lo escribió la API, que es la fuente de verdad.
+                  fetch("/api/patient/psychologist")
+                    .then((res) => res.json())
+                    .then((data) => setPsychologist(data))
+                    .catch(() => {});
+                  setSection("home");
+                }}
+              />
             </>
           )}
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { refuseLink } from "@/lib/linking";
 
 export async function GET() {
   const session = await auth();
@@ -20,7 +21,6 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  if (session.user.role !== "PATIENT") return NextResponse.json({ error: "Solo los pacientes pueden usar este endpoint" }, { status: 403 });
 
   // Se acepta slug o email. El slug es el camino de un clic desde /p/[slug];
   // el email queda para quien vincula a mano desde su panel.
@@ -33,22 +33,24 @@ export async function POST(req: NextRequest) {
     ? (await prisma.psychologistProfile.findUnique({ where: { slug }, select: { user: true } }))?.user
     : await prisma.user.findUnique({ where: { email } });
 
-  if (!psychologist) {
-    return NextResponse.json(
-      { error: slug ? "No existe ese profesional" : "No existe un usuario con ese email" },
-      { status: 404 }
-    );
-  }
-  if (psychologist.role !== "PSYCHOLOGIST") return NextResponse.json({ error: "Ese usuario no es un psicólogo" }, { status: 400 });
-  if (psychologist.id === session.user.id) {
-    return NextResponse.json({ error: "No podés vincularte a vos mismo" }, { status: 400 });
-  }
-
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { psychologistId: true },
+    select: { id: true, role: true, psychologistId: true },
   });
-  if (me?.psychologistId) return NextResponse.json({ error: "Ya tenés un psicólogo asignado" }, { status: 409 });
+
+  // Las reglas viven en lib/linking, testeadas sin base de datos.
+  const refusal = refuseLink(me, psychologist ?? null);
+  if (refusal) {
+    // El mensaje de "no existe" se ajusta a cómo vino la búsqueda.
+    const error =
+      refusal.status === 404 && email ? "No existe un usuario con ese email" : refusal.error;
+    return NextResponse.json({ error }, { status: refusal.status });
+  }
+  // refuseLink ya descartó el caso ausente; esta guarda es para que TypeScript
+  // lo sepa y no para repetir la regla.
+  if (!psychologist) {
+    return NextResponse.json({ error: "No existe ese profesional" }, { status: 404 });
+  }
 
   await prisma.user.update({
     where: { id: session.user.id },

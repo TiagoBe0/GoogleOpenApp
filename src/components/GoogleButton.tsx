@@ -7,7 +7,10 @@ interface Props {
   callbackUrl?: string;
 }
 
-export default function GoogleButton({ label = "Continuar con Google", callbackUrl = "/dashboard" }: Props) {
+// Vuelve a /bienvenida, no a un panel: Google no puede decir si quien entra es
+// paciente o profesional, así que esa pantalla lo pregunta y desde ahí redirige
+// al panel que corresponde. Quien ya eligió la atraviesa sin verla.
+export default function GoogleButton({ label = "Continuar con Google", callbackUrl = "/bienvenida" }: Props) {
   const handleGoogleSignIn = async () => {
     await signOut({ redirect: false });
     await signIn("google", { callbackUrl });

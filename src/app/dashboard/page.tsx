@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { checkAccess } from "@/lib/session-guard";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import WeekCalendar from "@/components/WeekCalendar";
@@ -8,9 +9,12 @@ import ReviewsPanel from "@/components/ReviewsPanel";
 import Link from "next/link";
 
 export default async function DashboardPage() {
+  // Manda a /bienvenida a quien entró con Google y todavía no dijo cómo usa
+  // PsicoLink; el redirect se ejecuta acá, no dentro del helper.
+  const access = await checkAccess("PSYCHOLOGIST");
+  if (!access.ok) redirect(access.redirectTo);
   const session = await auth();
   if (!session) redirect("/login");
-  if (session.user.role === "PATIENT") redirect("/patient");
 
   const now = new Date();
   const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);

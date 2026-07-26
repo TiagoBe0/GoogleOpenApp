@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import GoogleButton from "@/components/GoogleButton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -175,6 +176,19 @@ export default function RegisterPage() {
             {loading ? "Creando cuenta..." : `Crear cuenta como ${role === "PSYCHOLOGIST" ? "psicólogo" : "paciente"}`}
           </button>
         </form>
+
+        <div className="mt-6 flex items-center gap-3" aria-hidden>
+          <span className="h-px flex-1 bg-line" />
+          <span className="text-sm text-muted">o</span>
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <div className="mt-6">
+          <GoogleButton label="Registrarme con Google" />
+          <p className="mt-2 text-sm text-muted">
+            Te preguntamos si sos paciente o psicólogo apenas entres.
+          </p>
+        </div>
 
         <p className="mt-6 text-base text-muted">
           ¿Ya tenés cuenta?{" "}

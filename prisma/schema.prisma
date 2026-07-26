@@ -15,6 +15,10 @@ model User {
   image         String?
   password      String?
   role          String    @default("PATIENT")
+  // Distingue "eligió su rol" de "quedó con el valor por defecto". Google no
+  // puede preguntarlo durante el login, así que quien entra por ahí llega con
+  // false y la pantalla de bienvenida se lo pregunta una sola vez.
+  roleChosen    Boolean   @default(false)
   psychologistId String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

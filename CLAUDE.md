@@ -47,6 +47,26 @@ Config en `.env` (no versionado). Plantilla en [.env.example](.env.example):
 `NEXTAUTH_URL`, `MP_ACCESS_TOKEN`/`MP_PUBLIC_KEY`/`MP_WEBHOOK_SECRET`.
 Nunca imprimir ni commitear estos valores.
 
+## Cambios de esquema: reiniciar el dev server
+
+Después de tocar `prisma/schema.prisma` y correr una migración, **hay que
+reiniciar `npm run dev`**. El cliente de Prisma queda cargado en memoria: aunque
+el archivo en disco ya conozca el campo nuevo, el proceso viejo no, y falla con
+`Unknown field X for select statement on model Y`. Next lo marca como `(stale)`
+en el overlay de error.
+
+Síntoma que confunde: las rutas sin sesión responden bien (307) y las que sí
+consultan la base tiran 500, porque el código retorna antes de tocar Prisma
+cuando no hay usuario.
+
+Si tras reiniciar sigue igual, borrar la caché: `rm -rf .next`. Turbopack la
+conserva entre reinicios y ya causó dos falsos negativos en este proyecto (CSS
+viejo servido después de cambiar `globals.css`, y este mismo caso).
+
+Y nunca usar `prisma migrate dev --skip-generate` salvo que se corra
+`prisma generate` a mano después: saltear la generación es lo que dejó el
+cliente desactualizado la primera vez.
+
 ## Design System
 
 Leer [DESIGN.md](DESIGN.md) **antes** de cualquier decisión visual o de interfaz. Ahí

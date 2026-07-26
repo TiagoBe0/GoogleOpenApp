@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { availableSlots, isWeekend } from "@/lib/slots";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -13,9 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Parámetros incompletos" }, { status: 400 });
   }
 
-  // Weekend check using client's local date
-  const localDay = new Date(year, month - 1, day).getDay(); // 0=Sun, 6=Sat
-  if (localDay === 0 || localDay === 6) {
+  if (isWeekend(year, month, day)) {
     return NextResponse.json({ slots: [], duration: 50 });
   }
 
@@ -49,32 +48,18 @@ export async function GET(req: NextRequest) {
     return { start: startMin, end: startMin + a.duration };
   });
 
-  // Working hours 8:00–20:00 (local)
-  const workStart = 8 * 60;
-  const workEnd = 20 * 60;
-
-  // isToday check: compare client's today with requested date
-  const nowUtcMs = Date.now();
-  const nowLocalMs = nowUtcMs - tzOffset * 60 * 1000;
-  const nowLocal = new Date(nowLocalMs);
+  // Si la fecha pedida es hoy para el cliente, hay que descartar lo que ya pasó.
+  const nowLocal = new Date(Date.now() - tzOffset * 60 * 1000);
   const isToday =
     nowLocal.getUTCFullYear() === year &&
     nowLocal.getUTCMonth() + 1 === month &&
     nowLocal.getUTCDate() === day;
-  const nowLocalMin = isToday ? nowLocal.getUTCHours() * 60 + nowLocal.getUTCMinutes() : 0;
 
-  const slots: string[] = [];
-
-  for (let min = workStart; min + duration <= workEnd; min += duration) {
-    if (isToday && min <= nowLocalMin) continue;
-
-    const busy = busyRanges.some((r) => min < r.end && min + duration > r.start);
-    if (busy) continue;
-
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-  }
+  const slots = availableSlots({
+    duration,
+    busy: busyRanges,
+    nowMinutes: isToday ? nowLocal.getUTCHours() * 60 + nowLocal.getUTCMinutes() : null,
+  });
 
   return NextResponse.json({ slots, duration });
 }

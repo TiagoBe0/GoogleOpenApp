@@ -22,12 +22,27 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   if (session.user.role !== "PATIENT") return NextResponse.json({ error: "Solo los pacientes pueden usar este endpoint" }, { status: 403 });
 
-  const { email } = await req.json();
-  if (!email) return NextResponse.json({ error: "Email requerido" }, { status: 400 });
+  // Se acepta slug o email. El slug es el camino de un clic desde /p/[slug];
+  // el email queda para quien vincula a mano desde su panel.
+  const { email, slug } = await req.json();
+  if (!email && !slug) {
+    return NextResponse.json({ error: "Email o slug requerido" }, { status: 400 });
+  }
 
-  const psychologist = await prisma.user.findUnique({ where: { email } });
-  if (!psychologist) return NextResponse.json({ error: "No existe un usuario con ese email" }, { status: 404 });
+  const psychologist = slug
+    ? (await prisma.psychologistProfile.findUnique({ where: { slug }, select: { user: true } }))?.user
+    : await prisma.user.findUnique({ where: { email } });
+
+  if (!psychologist) {
+    return NextResponse.json(
+      { error: slug ? "No existe ese profesional" : "No existe un usuario con ese email" },
+      { status: 404 }
+    );
+  }
   if (psychologist.role !== "PSYCHOLOGIST") return NextResponse.json({ error: "Ese usuario no es un psicólogo" }, { status: 400 });
+  if (psychologist.id === session.user.id) {
+    return NextResponse.json({ error: "No podés vincularte a vos mismo" }, { status: 400 });
+  }
 
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },

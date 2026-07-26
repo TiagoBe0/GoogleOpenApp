@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import BookingWidget from "@/components/BookingWidget";
+import LinkPsychologistButton from "@/components/LinkPsychologistButton";
 import { auth } from "@/auth";
 
 interface Props {
@@ -21,6 +23,19 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const session = await auth();
   const isRegistered = !!session && session.user.role === "PATIENT";
+
+  // El botón de vincular solo tiene sentido para un paciente registrado que
+  // todavía no eligió profesional. Quien ya tiene uno reserva desde su panel.
+  const myPsychologistId = isRegistered
+    ? (
+        await prisma.user.findUnique({
+          where: { id: session!.user.id },
+          select: { psychologistId: true },
+        })
+      )?.psychologistId ?? null
+    : null;
+  const canLink = isRegistered && !myPsychologistId;
+  const alreadyMine = myPsychologistId === profile.userId;
 
   const initials = profile.user.name
     ? profile.user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -146,6 +161,24 @@ export default async function PublicProfilePage({ params }: Props) {
               }}
               isRegistered={isRegistered}
             />
+
+            {canLink && (
+              <div className="mt-6 border-t border-line pt-6">
+                <LinkPsychologistButton
+                  slug={slug}
+                  name={profile.user.name ?? "este profesional"}
+                />
+              </div>
+            )}
+            {alreadyMine && (
+              <p className="mt-6 border-t border-line pt-6 text-sm text-muted">
+                Es tu profesional de cabecera. También podés reservar desde{" "}
+                <Link href="/patient" className="font-medium text-primary hover:text-primary-hi">
+                  tu panel
+                </Link>
+                .
+              </p>
+            )}
           </div>
         </div>
       </main>

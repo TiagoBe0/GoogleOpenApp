@@ -15,6 +15,17 @@ const PUBLIC_PROFILE_SELECT = {
 
 const BIO_PREVIEW_CHARS = 180;
 
+// Cuántas opiniones hacen falta para que el promedio propio pese más que el
+// promedio general. Con pocas reseñas el puntaje se "encoge" hacia la media:
+// así un 5,0 con una opinión no le gana a un 4,8 con treinta, y alguien recién
+// publicado no arranca último como si lo hubieran calificado 0.
+const RATING_CONFIDENCE = 3;
+const FALLBACK_MEAN = 4.5;
+
+function weightedScore(average: number, count: number, globalMean: number): number {
+  return (count * average + RATING_CONFIDENCE * globalMean) / (count + RATING_CONFIDENCE);
+}
+
 export interface DirectoryEntry {
   id: string;
   name: string | null;
@@ -45,6 +56,18 @@ export async function listPsychologists(query = ""): Promise<DirectoryEntry[]> {
       reviewsReceived: { select: { rating: true } },
     },
   });
+
+  // Media general sobre quienes tienen al menos una opinión: es el punto hacia
+  // el que se encogen los puntajes con pocas reseñas.
+  const rated = psychologists.filter((p) => p.reviewsReceived.length > 0);
+  const globalMean =
+    rated.length === 0
+      ? FALLBACK_MEAN
+      : rated.reduce(
+          (sum, p) =>
+            sum + p.reviewsReceived.reduce((s, r) => s + r.rating, 0) / p.reviewsReceived.length,
+          0
+        ) / rated.length;
 
   return (
     psychologists
@@ -78,8 +101,13 @@ export async function listPsychologists(query = ""): Promise<DirectoryEntry[]> {
         if (!q) return true;
         return [p.name, p.specialty, p.bio].some((field) => field?.toLowerCase().includes(q));
       })
-      // Mejor calificados primero, y entre iguales los que tienen más opiniones:
-      // un 5.0 con una sola reseña no debería tapar a un 4.8 con treinta.
-      .sort((a, b) => b.rating.average - a.rating.average || b.rating.count - a.rating.count)
+      // Orden por puntaje ponderado, no por promedio crudo. Ordenar por
+      // promedio dejaba a un 5,0 con una opinión por encima de un 4,8 con
+      // cuatro, y hundía al último en llegar por no tener reseñas todavía.
+      .sort(
+        (a, b) =>
+          weightedScore(b.rating.average, b.rating.count, globalMean) -
+          weightedScore(a.rating.average, a.rating.count, globalMean)
+      )
   );
 }

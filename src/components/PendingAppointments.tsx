@@ -109,7 +109,7 @@ export default function PendingAppointments() {
                 <button
                   onClick={() => handleAction(a.id, "CONFIRMED")}
                   disabled={actionId === a.id}
-                  className="flex-1 text-sm font-semibold text-white bg-primary hover:bg-primary-hi disabled:bg-primary-soft px-4 min-h-11 rounded-md transition-colors sm:flex-none"
+                  className="flex-1 text-sm font-semibold text-white bg-primary hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted px-4 min-h-11 rounded-md transition-colors sm:flex-none"
                 >
                   {actionId === a.id ? "…" : "Confirmar"}
                 </button>

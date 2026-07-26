@@ -13,12 +13,20 @@ export default async function Home() {
           <Link href="/" className="font-display text-2xl font-semibold text-ink">
             PsicoLink
           </Link>
-          <Link
-            href="/login"
-            className="flex min-h-11 items-center rounded-md border border-line-strong bg-surface px-4 text-base font-semibold text-ink transition-colors hover:bg-surface-2"
-          >
-            Iniciar sesión
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/psicologos"
+              className="flex min-h-11 items-center rounded-md px-4 text-base font-semibold text-ink transition-colors hover:bg-surface-2"
+            >
+              Buscar psicólogo
+            </Link>
+            <Link
+              href="/login"
+              className="flex min-h-11 items-center rounded-md border border-line-strong bg-surface px-4 text-base font-semibold text-ink transition-colors hover:bg-surface-2"
+            >
+              Iniciar sesión
+            </Link>
+          </div>
         </nav>
 
         <div className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[1fr_440px] lg:py-14">
@@ -35,9 +43,17 @@ export default async function Home() {
               simple y pacientes que necesitan confianza.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              {/* Una sola acción primaria por vista (DESIGN.md). Para quien
+                  llega sin profesional, buscar es el primer paso real. */}
+              <Link
+                href="/psicologos"
+                className="flex min-h-11 items-center justify-center rounded-md bg-primary px-6 text-base font-semibold text-white transition-colors hover:bg-primary-hi"
+              >
+                Buscar psicólogo
+              </Link>
               <Link
                 href="/register"
-                className="flex min-h-11 items-center justify-center rounded-md bg-primary px-6 text-base font-semibold text-white transition-colors hover:bg-primary-hi"
+                className="flex min-h-11 items-center justify-center rounded-md border border-line-strong bg-surface px-6 text-base font-semibold text-ink transition-colors hover:bg-surface-2"
               >
                 Crear cuenta gratis
               </Link>

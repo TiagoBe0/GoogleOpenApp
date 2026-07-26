@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import WeekCalendar from "@/components/WeekCalendar";
 import PendingAppointments from "@/components/PendingAppointments";
-import { signIn } from "@/auth";
+import { signIn, CALENDAR_SCOPE } from "@/auth";
 import ReviewsPanel from "@/components/ReviewsPanel";
 import Link from "next/link";
 
@@ -122,7 +122,10 @@ export default async function DashboardPage() {
             <form
               action={async () => {
                 "use server";
-                await signIn("google", { redirectTo: "/dashboard" });
+                // Acá sí se pide el permiso de calendario, que el login ya no
+                // pide. Es el único punto donde el profesional ve la pantalla
+                // de app no verificada, y solo si decide sincronizar.
+                await signIn("google", { redirectTo: "/dashboard" }, { scope: CALENDAR_SCOPE });
               }}
             >
               <button

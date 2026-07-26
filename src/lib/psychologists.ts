@@ -20,10 +20,39 @@ const BIO_PREVIEW_CHARS = 180;
 // así un 5,0 con una opinión no le gana a un 4,8 con treinta, y alguien recién
 // publicado no arranca último como si lo hubieran calificado 0.
 const RATING_CONFIDENCE = 3;
-const FALLBACK_MEAN = 4.5;
 
-function weightedScore(average: number, count: number, globalMean: number): number {
-  return (count * average + RATING_CONFIDENCE * globalMean) / (count + RATING_CONFIDENCE);
+// Media de referencia FIJA, no calculada sobre el propio directorio. Calcularla
+// tenía un defecto sutil: con pocos perfiles, el 5,0 que queremos moderar
+// levantaba la media que debía moderarlo, y terminaba ganando igual. Un valor
+// fijo apenas por debajo de lo típico en marketplaces de servicios (que rondan
+// 4,5-4,7) hace que el encogimiento realmente pese y que el orden no dependa de
+// cuántos perfiles haya cargados.
+const PRIOR_MEAN = 4.3;
+
+export function weightedScore(average: number, count: number): number {
+  return (count * average + RATING_CONFIDENCE * PRIOR_MEAN) / (count + RATING_CONFIDENCE);
+}
+
+/** Recorta la bio para la tarjeta del listado, sin cortar a mitad de palabra visible. */
+export function bioPreview(bio: string | null): string | null {
+  if (!bio || bio.length <= BIO_PREVIEW_CHARS) return bio;
+  return `${bio.slice(0, BIO_PREVIEW_CHARS).trimEnd()}…`;
+}
+
+export function matchesQuery(entry: DirectoryEntry, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [entry.name, entry.specialty, entry.bio].some((f) => f?.toLowerCase().includes(q));
+}
+
+/**
+ * Filtra y ordena el directorio. Puro a propósito: el orden es la parte con
+ * criterio del producto y se testea sin tocar la base.
+ */
+export function rankEntries(entries: DirectoryEntry[], query = ""): DirectoryEntry[] {
+  return entries
+    .filter((e) => matchesQuery(e, query))
+    .sort((a, b) => weightedScore(b.rating.average, b.rating.count) - weightedScore(a.rating.average, a.rating.count));
 }
 
 export interface DirectoryEntry {
@@ -57,57 +86,29 @@ export async function listPsychologists(query = ""): Promise<DirectoryEntry[]> {
     },
   });
 
-  // Media general sobre quienes tienen al menos una opinión: es el punto hacia
-  // el que se encogen los puntajes con pocas reseñas.
-  const rated = psychologists.filter((p) => p.reviewsReceived.length > 0);
-  const globalMean =
-    rated.length === 0
-      ? FALLBACK_MEAN
-      : rated.reduce(
-          (sum, p) =>
-            sum + p.reviewsReceived.reduce((s, r) => s + r.rating, 0) / p.reviewsReceived.length,
-          0
-        ) / rated.length;
+  const entries = psychologists.map((p): DirectoryEntry => {
+    const profile = p.psychologistProfile!;
+    const ratings = p.reviewsReceived;
+    const count = ratings.length;
+    const average =
+      count === 0 ? 0 : Number((ratings.reduce((s, r) => s + r.rating, 0) / count).toFixed(1));
 
-  return (
-    psychologists
-      .map((p): DirectoryEntry => {
-        const profile = p.psychologistProfile!;
-        const ratings = p.reviewsReceived;
-        const count = ratings.length;
-        const average =
-          count === 0 ? 0 : Number((ratings.reduce((s, r) => s + r.rating, 0) / count).toFixed(1));
+    return {
+      id: p.id,
+      name: p.name,
+      image: p.image,
+      slug: profile.slug,
+      specialty: profile.specialty,
+      licenseNumber: profile.licenseNumber,
+      bio: bioPreview(profile.bio),
+      consultationFee: profile.consultationFee,
+      currency: profile.currency,
+      sessionDuration: profile.sessionDuration,
+      rating: { average, count },
+    };
+  });
 
-        return {
-          id: p.id,
-          name: p.name,
-          image: p.image,
-          slug: profile.slug,
-          specialty: profile.specialty,
-          licenseNumber: profile.licenseNumber,
-          bio:
-            profile.bio && profile.bio.length > BIO_PREVIEW_CHARS
-              ? `${profile.bio.slice(0, BIO_PREVIEW_CHARS).trimEnd()}…`
-              : profile.bio,
-          consultationFee: profile.consultationFee,
-          currency: profile.currency,
-          sessionDuration: profile.sessionDuration,
-          rating: { average, count },
-        };
-      })
-      // SQLite no soporta `mode: "insensitive"` en Prisma, así que el filtro va
-      // acá. El directorio es chico; cuando crezca, mover a un índice.
-      .filter((p) => {
-        if (!q) return true;
-        return [p.name, p.specialty, p.bio].some((field) => field?.toLowerCase().includes(q));
-      })
-      // Orden por puntaje ponderado, no por promedio crudo. Ordenar por
-      // promedio dejaba a un 5,0 con una opinión por encima de un 4,8 con
-      // cuatro, y hundía al último en llegar por no tener reseñas todavía.
-      .sort(
-        (a, b) =>
-          weightedScore(b.rating.average, b.rating.count, globalMean) -
-          weightedScore(a.rating.average, a.rating.count, globalMean)
-      )
-  );
+  // SQLite no soporta `mode: "insensitive"` en Prisma, así que filtrar y
+  // ordenar pasa acá. El directorio es chico; cuando crezca, mover a un índice.
+  return rankEntries(entries, q);
 }

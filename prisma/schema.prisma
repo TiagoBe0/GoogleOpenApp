@@ -32,6 +32,27 @@ model User {
   reviewsGiven             Review[]      @relation("PatientReviews")
   reviewsReceived          Review[]      @relation("PsychologistReviews")
   psychologistProfile      PsychologistProfile?
+  availability             AvailabilityRule[]
+}
+
+/// Franja semanal recurrente en la que el profesional atiende. Un día puede
+/// tener varias (mañana y tarde), y los minutos son locales a la zona horaria
+/// del perfil, no UTC: la agenda de alguien que atiende "de 14 a 19" no se
+/// corre cuando cambia el horario de verano.
+model AvailabilityRule {
+  id             String   @id @default(cuid())
+  psychologistId String
+  /// 0 = domingo ... 6 = sábado, igual que Date.getDay().
+  weekday        Int
+  /// Minutos desde la medianoche local. 480 = 08:00.
+  startMinute    Int
+  endMinute      Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  psychologist User @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+
+  @@index([psychologistId])
 }
 
 model Appointment {
@@ -43,6 +64,9 @@ model Appointment {
   notes           String?
   status          String   @default("PENDING")
   calendarEventId String?
+  /// Sube con cada reprogramación. Va en el .ics: sin un número mayor que el
+  /// anterior, el cliente de calendario descarta la actualización por vieja.
+  calendarSequence Int     @default(0)
   // anonymous patient fields (public booking via /p/[slug])
   patientName     String?
   patientEmail    String?
@@ -74,6 +98,23 @@ model PsychologistProfile {
   instagramUrl    String?
   linkedinUrl     String?
   websiteUrl      String?
+
+  // Datos de contacto y consultorio. El formulario de perfil ya los pedía
+  // desde el principio, pero no existían acá: se completaban, decía "guardado
+  // correctamente" y se perdían al recargar.
+  phone              String?
+  address            String?
+  city               String?
+  country            String?
+  yearsOfExperience  Int?
+  /// Idiomas separados por coma, tal como los escribe el profesional.
+  languages          String?
+  modalityOnline     Boolean @default(false)
+  modalityPresential Boolean @default(true)
+  /// En false el perfil sale del directorio público, pero su link directo
+  /// sigue funcionando: sirve para quien tiene la agenda llena.
+  acceptsNewPatients Boolean @default(true)
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

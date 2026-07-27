@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Profile {
   sessionDuration: number;
   consultationFee: number | null;
   currency: string;
+}
+
+/** Horario que ofrece el servidor, con el instante exacto ya resuelto. */
+interface Slot {
+  label: string;
+  startsAt: string;
 }
 
 interface Props {
@@ -28,9 +34,11 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<{ y: number; m: number; d: number } | null>(null);
-  const [slots, setSlots] = useState<string[]>([]);
+  const [slots, setSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  // null mientras no se sabe: sin eso el calendario apagaría todos los días.
+  const [openWeekdays, setOpenWeekdays] = useState<number[] | null>(null);
   const [notes, setNotes] = useState("");
   const [patientName, setPatientName] = useState("");
   const [patientEmail, setPatientEmail] = useState("");
@@ -42,6 +50,23 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
   const firstDow = new Date(viewYear, viewMonth, 1).getDay();
   const totalDays = daysInMonth(viewYear, viewMonth);
 
+  // Días en los que el profesional atiende, para no ofrecer un día cerrado.
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/api/availability?psychologistId=${psychologistId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.rules) return;
+        setOpenWeekdays([...new Set((data.rules as { weekday: number }[]).map((r) => r.weekday))]);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [psychologistId]);
+
   async function selectDay(d: number) {
     const sel = { y: viewYear, m: viewMonth + 1, d };
     setSelectedDate(sel);
@@ -50,10 +75,9 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
     setLoadingSlots(true);
     setError(null);
 
-    const tzOffset = new Date().getTimezoneOffset();
     try {
       const res = await fetch(
-        `/api/appointments/available-slots?psychologistId=${psychologistId}&year=${sel.y}&month=${sel.m}&day=${sel.d}&tzOffset=${tzOffset}`
+        `/api/appointments/available-slots?psychologistId=${psychologistId}&year=${sel.y}&month=${sel.m}&day=${sel.d}`
       );
       const data = await res.json();
       setSlots(data.slots ?? []);
@@ -83,17 +107,13 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
     setSubmitting(true);
     setError(null);
 
-    const [h, min] = selectedSlot.split(":").map(Number);
-    const tzOffset = new Date().getTimezoneOffset();
-    const localMs = Date.UTC(selectedDate.y, selectedDate.m - 1, selectedDate.d, h, min + tzOffset, 0, 0);
-    const date = new Date(localMs).toISOString();
-
     try {
       const res = await fetch("/api/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date,
+          // El instante lo resolvió el servidor al ofrecer el horario.
+          date: selectedSlot.startsAt,
           psychologistId,
           notes: notes || undefined,
           ...(!isRegistered && { patientName, patientEmail, patientPhone }),
@@ -168,16 +188,18 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
           {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
             const date = new Date(viewYear, viewMonth, d);
             const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            const isClosed = openWeekdays !== null && !openWeekdays.includes(date.getDay());
+            const unavailable = isPast || isClosed;
             const isSel = selectedDate?.y === viewYear && selectedDate?.m === viewMonth + 1 && selectedDate?.d === d;
 
             return (
               <button
                 key={d}
-                disabled={isPast || isWeekend}
+                disabled={unavailable}
+                title={isClosed && !isPast ? "No atiende este día" : undefined}
                 onClick={() => selectDay(d)}
                 className={`aspect-square rounded-md text-sm font-semibold transition-colors ${
-                  isPast || isWeekend
+                  unavailable
                     ? "text-line-strong cursor-not-allowed"
                     : isSel
                     ? "bg-primary text-white"
@@ -209,15 +231,15 @@ export default function BookingWidget({ psychologistId, profile, isRegistered = 
             <div className="grid grid-cols-4 gap-2">
               {slots.map((s) => (
                 <button
-                  key={s}
+                  key={s.startsAt}
                   onClick={() => setSelectedSlot(s)}
                   className={`min-h-11 rounded-md text-sm font-semibold transition-colors border ${
-                    selectedSlot === s
+                    selectedSlot?.startsAt === s.startsAt
                       ? "bg-primary text-white border-primary"
                       : "border-line-strong text-ink hover:bg-primary-soft hover:border-primary"
                   }`}
                 >
-                  {s}
+                  {s.label}
                 </button>
               ))}
             </div>

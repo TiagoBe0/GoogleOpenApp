@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { labelToMinutes, minutesToLabel } from "@/lib/slots";
 
 interface Psychologist {
+  id: string;
   name: string | null;
   email: string;
   image: string | null;
@@ -14,13 +16,10 @@ interface Props {
   onCreated: () => void;
 }
 
+/** Horario que ofrece el servidor, con el instante exacto ya resuelto. */
 interface Slot {
-  id: string;
   label: string;
-  hour: number;
-  minute: number;
-  duration: number;
-  mode: "online" | "presencial";
+  startsAt: string;
 }
 
 const MONTHS = [
@@ -41,15 +40,6 @@ const MONTHS = [
 const WEEK_DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const CALENDAR_DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
-const SLOTS: Slot[] = [
-  { id: "09-00", label: "09:00", hour: 9, minute: 0, duration: 50, mode: "online" },
-  { id: "10-00", label: "10:00", hour: 10, minute: 0, duration: 50, mode: "presencial" },
-  { id: "11-30", label: "11:30", hour: 11, minute: 30, duration: 50, mode: "online" },
-  { id: "15-00", label: "15:00", hour: 15, minute: 0, duration: 50, mode: "presencial" },
-  { id: "16-30", label: "16:30", hour: 16, minute: 30, duration: 50, mode: "online" },
-  { id: "18-00", label: "18:00", hour: 18, minute: 0, duration: 50, mode: "online" },
-];
-
 function startOfDay(date: Date) {
   const next = new Date(date);
   next.setHours(0, 0, 0, 0);
@@ -60,10 +50,13 @@ function formatDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function formatSlotEnd(slot: Slot) {
-  const end = new Date();
-  end.setHours(slot.hour, slot.minute + slot.duration, 0, 0);
-  return end.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+/**
+ * Hora de fin, para mostrar "16:00 - 16:50". Se calcula sobre la etiqueta y no
+ * sobre el instante: la etiqueta ya viene en la hora del profesional, y
+ * formatear el instante la traduciría a la zona del navegador.
+ */
+function formatSlotEnd(slot: Slot, duration: number) {
+  return minutesToLabel(labelToMinutes(slot.label) + duration);
 }
 
 function initials(name: string | null, email: string) {
@@ -79,6 +72,50 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [duration, setDuration] = useState(50);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  // null mientras no se sabe: sin eso el calendario apagaría todos los días.
+  const [openWeekdays, setOpenWeekdays] = useState<number[] | null>(null);
+
+  // Días en los que el profesional atiende, para no dejar elegir un día cerrado.
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/api/availability?psychologistId=${psychologist.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.rules) return;
+        setOpenWeekdays([...new Set((data.rules as { weekday: number }[]).map((r) => r.weekday))]);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [psychologist.id]);
+
+  const loadSlots = useCallback(
+    async (date: Date) => {
+      setLoadingSlots(true);
+      setSlots([]);
+      try {
+        const res = await fetch(
+          `/api/appointments/available-slots?psychologistId=${psychologist.id}` +
+            `&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`
+        );
+        const data = await res.json();
+        setSlots(data.slots ?? []);
+        if (data.duration) setDuration(data.duration);
+      } catch {
+        setError("No se pudieron cargar los horarios.");
+      } finally {
+        setLoadingSlots(false);
+      }
+    },
+    [psychologist.id]
+  );
 
   const calendarCells = useMemo(() => {
     const year = viewDate.getFullYear();
@@ -105,8 +142,6 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
   async function handleSubmit() {
     if (!selectedDate || !selectedSlot) return;
 
-    const date = new Date(selectedDate);
-    date.setHours(selectedSlot.hour, selectedSlot.minute, 0, 0);
     setLoading(true);
     setError("");
 
@@ -115,8 +150,9 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date: date.toISOString(),
-          duration: selectedSlot.duration,
+          // El instante lo resolvió el servidor al ofrecer el horario.
+          date: selectedSlot.startsAt,
+          duration,
           notes,
         }),
       });
@@ -178,9 +214,9 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
                 <div className="mt-2 space-y-1">
                   <p className="text-sm font-semibold text-ink">{dateLabel}</p>
                   <p className="text-sm font-semibold text-primary">
-                    {selectedSlot.label} - {formatSlotEnd(selectedSlot)}
+                    {selectedSlot.label} - {formatSlotEnd(selectedSlot, duration)}
                   </p>
-                  <p className="text-xs text-muted">{selectedSlot.mode === "online" ? "Online" : "Presencial"}</p>
+                  <p className="text-xs text-muted">{duration} minutos</p>
                 </div>
               ) : (
                 <p className="mt-2 text-xs italic text-muted">Elegí fecha y horario para continuar.</p>
@@ -223,27 +259,31 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
 
                 const selected = selectedDate && formatDateKey(selectedDate) === formatDateKey(cell.date);
                 const isToday = formatDateKey(cell.date) === formatDateKey(today);
+                const closed = openWeekdays !== null && !openWeekdays.includes(cell.date.getDay());
+                const unavailable = cell.past || closed;
 
                 return (
                   <button
                     key={formatDateKey(cell.date)}
                     type="button"
-                    disabled={cell.past}
+                    disabled={unavailable}
+                    title={closed && !cell.past ? "El profesional no atiende este día" : undefined}
                     onClick={() => {
                       setSelectedDate(cell.date);
                       setSelectedSlot(null);
                       setError("");
+                      if (cell.date) loadSlots(cell.date);
                     }}
                     className={`relative flex aspect-square items-center justify-center rounded-md border text-sm font-semibold transition-colors ${
                       selected
                         ? "border-primary bg-primary text-white"
-                        : cell.past
+                        : unavailable
                           ? "border-transparent text-line-strong"
                           : "border-transparent bg-surface-2 text-ink hover:border-primary hover:bg-primary-soft"
                     } ${isToday && !selected ? "border-primary" : ""}`}
                   >
                     {cell.day}
-                    {!cell.past && <span className={`absolute bottom-1.5 h-1.5 w-1.5 rounded-full ${selected ? "bg-white/70" : "bg-primary"}`} />}
+                    {!unavailable && <span className={`absolute bottom-1.5 h-1.5 w-1.5 rounded-full ${selected ? "bg-white/70" : "bg-primary"}`} />}
                   </button>
                 );
               })}
@@ -258,12 +298,16 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
             <div className="max-h-[420px] space-y-2 overflow-y-auto p-3">
               {!selectedDate ? (
                 <p className="px-3 py-10 text-center text-sm leading-6 text-muted">Seleccioná un día para ver los horarios disponibles.</p>
+              ) : loadingSlots ? (
+                [...Array(5)].map((_, i) => <div key={i} className="h-14 animate-pulse rounded-md bg-surface-2" />)
+              ) : slots.length === 0 ? (
+                <p className="px-3 py-10 text-center text-sm leading-6 text-muted">No quedan horarios libres este día.</p>
               ) : (
-                SLOTS.map((slot) => {
-                  const selected = selectedSlot?.id === slot.id;
+                slots.map((slot) => {
+                  const selected = selectedSlot?.startsAt === slot.startsAt;
                   return (
                     <button
-                      key={slot.id}
+                      key={slot.startsAt}
                       type="button"
                       onClick={() => {
                         setSelectedSlot(slot);
@@ -273,13 +317,8 @@ export default function PsicoLinkAppointmentModal({ psychologist, onClose, onCre
                         selected ? "border-primary bg-primary-soft" : "border-line bg-surface-2 hover:border-primary hover:bg-primary-soft"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-ink">
-                          {slot.label} - {formatSlotEnd(slot)}
-                        </span>
-                      </div>
-                      <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${slot.mode === "online" ? "bg-primary-soft text-primary" : "bg-info/10 text-info"}`}>
-                        {slot.mode === "online" ? "Online" : "Presencial"}
+                      <span className="text-sm font-semibold text-ink">
+                        {slot.label} - {formatSlotEnd(slot, duration)}
                       </span>
                     </button>
                   );

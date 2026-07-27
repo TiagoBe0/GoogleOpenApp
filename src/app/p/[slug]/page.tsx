@@ -83,6 +83,20 @@ export default async function PublicProfilePage({ params }: Props) {
               {profile.licenseNumber && (
                 <p className="text-xs text-muted mt-1">Matrícula: {profile.licenseNumber}</p>
               )}
+              {(profile.modalityPresential || profile.modalityOnline) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {profile.modalityPresential && (
+                    <span className="rounded-sm bg-primary-soft px-2 py-1 text-xs font-semibold text-primary">
+                      Presencial
+                    </span>
+                  )}
+                  {profile.modalityOnline && (
+                    <span className="rounded-sm bg-primary-soft px-2 py-1 text-xs font-semibold text-primary">
+                      Online
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {profile.bio && (
@@ -103,6 +117,28 @@ export default async function PublicProfilePage({ params }: Props) {
                   <span className="text-muted">Honorarios</span>
                   <span className="text-ink font-semibold">
                     {profile.currency} {profile.consultationFee.toLocaleString("es-AR")}
+                  </span>
+                </div>
+              )}
+              {profile.yearsOfExperience != null && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted">Experiencia</span>
+                  <span className="text-ink font-semibold">
+                    {profile.yearsOfExperience} {profile.yearsOfExperience === 1 ? "año" : "años"}
+                  </span>
+                </div>
+              )}
+              {profile.languages && (
+                <div className="flex items-start justify-between gap-4 text-sm">
+                  <span className="text-muted">Idiomas</span>
+                  <span className="text-ink font-semibold text-right">{profile.languages}</span>
+                </div>
+              )}
+              {profile.modalityPresential && (profile.city || profile.address) && (
+                <div className="flex items-start justify-between gap-4 text-sm">
+                  <span className="text-muted">Consultorio</span>
+                  <span className="text-ink font-semibold text-right">
+                    {[profile.address, profile.city, profile.country].filter(Boolean).join(", ")}
                   </span>
                 </div>
               )}

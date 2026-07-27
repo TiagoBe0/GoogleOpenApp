@@ -75,8 +75,14 @@ export async function listPsychologists(query = ""): Promise<DirectoryEntry[]> {
   // Solo quienes ya completaron el perfil: el slug es obligatorio en
   // PsychologistProfile, así que tener perfil equivale a tener página pública.
   // Listar a alguien sin perfil sería mandar al paciente a un 404.
+  //
+  // `acceptsNewPatients` en false saca el perfil del directorio, pero su link
+  // directo sigue andando: quien ya es paciente suyo puede seguir reservando.
   const psychologists = await prisma.user.findMany({
-    where: { role: "PSYCHOLOGIST", psychologistProfile: { isNot: null } },
+    where: {
+      role: "PSYCHOLOGIST",
+      psychologistProfile: { is: { acceptsNewPatients: true } },
+    },
     select: {
       id: true,
       name: true,

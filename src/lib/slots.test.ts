@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { availableSlots, overlaps, isWeekend, minutesToLabel, WORK_START } from "./slots";
+import { availableSlots, overlaps, minutesToLabel, labelToMinutes, WORK_START } from "./slots";
 
 const at = (h: number, m = 0) => h * 60 + m;
 
@@ -139,15 +139,85 @@ describe("duración de la sesión", () => {
   });
 });
 
-describe("fin de semana", () => {
-  it("sábado y domingo no son días de atención", () => {
-    expect(isWeekend(2026, 7, 25)).toBe(true); // sábado
-    expect(isWeekend(2026, 7, 26)).toBe(true); // domingo
+describe("franjas de atención del profesional", () => {
+  it("un día sin franjas no ofrece nada", () => {
+    expect(availableSlots({ duration: 50, busy: [], windows: [] })).toEqual([]);
   });
 
-  it("los días de semana sí lo son", () => {
-    expect(isWeekend(2026, 7, 27)).toBe(false); // lunes
-    expect(isWeekend(2026, 7, 31)).toBe(false); // viernes
+  it("respeta el horario configurado en vez del genérico", () => {
+    const slots = availableSlots({
+      duration: 60,
+      busy: [],
+      windows: [{ start: at(14), end: at(19) }],
+    });
+
+    expect(slots).toEqual(["14:00", "15:00", "16:00", "17:00", "18:00"]);
+  });
+
+  // El caso del profesional que corta al mediodía.
+  it("con dos franjas ofrece las dos y nada en el hueco", () => {
+    const slots = availableSlots({
+      duration: 60,
+      busy: [],
+      windows: [
+        { start: at(9), end: at(12) },
+        { start: at(16), end: at(19) },
+      ],
+    });
+
+    expect(slots).toEqual(["09:00", "10:00", "11:00", "16:00", "17:00", "18:00"]);
+    expect(slots).not.toContain("13:00");
+  });
+
+  // Cada franja arranca su propia grilla: si la tarde se alineara con la mañana,
+  // alguien que atiende de 16 a 20 con sesiones de 50' perdería el primer turno.
+  it("cada franja arranca en su propio horario de apertura", () => {
+    const slots = availableSlots({
+      duration: 50,
+      busy: [],
+      windows: [
+        { start: at(9), end: at(11) },
+        { start: at(16), end: at(18) },
+      ],
+    });
+
+    expect(slots[0]).toBe("09:00");
+    expect(slots).toContain("16:00");
+  });
+
+  it("los turnos tomados siguen bloqueando dentro de la franja", () => {
+    const slots = availableSlots({
+      duration: 60,
+      busy: [{ start: at(17), end: at(18) }],
+      windows: [{ start: at(16), end: at(19) }],
+    });
+
+    expect(slots).toEqual(["16:00", "18:00"]);
+  });
+
+  it("dos franjas que se pisan no repiten la misma hora", () => {
+    const slots = availableSlots({
+      duration: 60,
+      busy: [],
+      windows: [
+        { start: at(9), end: at(12) },
+        { start: at(10), end: at(13) },
+      ],
+    });
+
+    expect(slots).toEqual([...new Set(slots)]);
+  });
+
+  it("un turno nunca termina después del cierre de su franja", () => {
+    const slots = availableSlots({
+      duration: 50,
+      busy: [],
+      windows: [{ start: at(14), end: at(16) }],
+    });
+
+    for (const slot of slots) {
+      expect(labelToMinutes(slot) + 50).toBeLessThanOrEqual(at(16));
+    }
   });
 });
 
@@ -159,5 +229,11 @@ describe("formato de la hora", () => {
 
   it("usa reloj de 24 horas", () => {
     expect(minutesToLabel(at(18, 30))).toBe("18:30");
+  });
+
+  it("vuelve a minutos sin perder nada", () => {
+    for (const min of [at(0), at(9), at(9, 5), at(18, 30), at(23, 59)]) {
+      expect(labelToMinutes(minutesToLabel(min))).toBe(min);
+    }
   });
 });

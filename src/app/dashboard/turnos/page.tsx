@@ -136,7 +136,11 @@ export default async function TurnosPage() {
                       <p className="text-xs text-muted mt-1 italic line-clamp-1">&ldquo;{apt.notes}&rdquo;</p>
                     )}
                   </div>
-                  <TurnoActions id={apt.id} />
+                  <TurnoActions
+                    id={apt.id}
+                    psychologistId={apt.psychologistId}
+                    date={new Date(apt.date).toISOString()}
+                  />
                 </div>
               );
             })}

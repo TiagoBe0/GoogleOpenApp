@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import PsicoLinkAppointmentModal from "@/components/PsicoLinkAppointmentModal";
 import BrowsePsychologists from "@/components/BrowsePsychologists";
+import RescheduleModal from "@/components/RescheduleModal";
 import ReviewsPanel from "@/components/ReviewsPanel";
 
 interface Patient {
@@ -25,7 +26,7 @@ interface Appointment {
   duration: number;
   notes: string | null;
   status: "PENDING" | "CONFIRMED" | "CANCELLED";
-  psychologist: { name: string | null; email: string };
+  psychologist: { id: string; name: string | null; email: string };
   amount: number | null;
   currency: string | null;
   paymentStatus: string | null;
@@ -188,6 +189,7 @@ export default function PatientDashboard({ patient }: Props) {
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<DashboardAppointment | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<DashboardAppointment | null>(null);
   const [cancelledMessage, setCancelledMessage] = useState(false);
   const [linkEmail, setLinkEmail] = useState("");
   const [linking, setLinking] = useState(false);
@@ -398,6 +400,7 @@ export default function PatientDashboard({ patient }: Props) {
                   </div>
                   <div className="relative z-10 mt-5 flex gap-2 md:mt-0">
                     <button className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hi transition-colors"><VideoIcon /> Unirse</button>
+                    <button onClick={() => setRescheduleTarget(upcoming[0])} className="min-h-11 rounded-md border border-line-strong px-4 text-sm font-semibold text-muted hover:border-primary hover:bg-primary-soft hover:text-primary transition-colors">Mover</button>
                     {upcoming[0].status === "PENDING" && <button onClick={() => setCancelTarget(upcoming[0])} className="min-h-11 rounded-md border border-line-strong px-4 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-ink transition-colors">Cancelar</button>}
                   </div>
                 </section>
@@ -644,6 +647,19 @@ export default function PatientDashboard({ patient }: Props) {
             </form>
           </div>
         </div>
+      )}
+
+      {rescheduleTarget && (
+        <RescheduleModal
+          appointmentId={rescheduleTarget.id}
+          psychologistId={rescheduleTarget.psychologist.id}
+          currentDate={rescheduleTarget.date}
+          onClose={() => setRescheduleTarget(null)}
+          onDone={() => {
+            setSuccess("Turno movido. Tu psicólogo lo va a confirmar.");
+            fetchAppointments();
+          }}
+        />
       )}
 
       {cancelTarget && (

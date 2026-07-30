@@ -12,6 +12,12 @@ export interface AppointmentEmail {
   notes?: string | null;
   /** Base para los links, sin barra final. */
   appUrl: string;
+  /**
+   * Link de la videollamada, si el profesional lo cargó. Solo se muestra en el
+   * aviso de confirmación: en una cancelación sería ofrecer una sala que ya no
+   * existe. Llega validado como https por src/lib/meeting-link.ts.
+   */
+  meetingUrl?: string | null;
 }
 
 export interface Message {
@@ -62,8 +68,10 @@ export function formatWhen(date: Date, timezone: string): string {
 function layout(title: string, lines: string[], cta?: { label: string; href: string }): string {
   const body = lines.map((line) => `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:${COLORS.text}">${line}</p>`).join("");
 
+  // El href se escapa porque desde que existe el link de videollamada puede
+  // venir de un campo que carga una persona, no solo de rutas de la app.
   const button = cta
-    ? `<a href="${cta.href}" style="display:inline-block;margin-top:8px;padding:12px 20px;background:${COLORS.primary};color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px">${cta.label}</a>`
+    ? `<a href="${escapeHtml(cta.href)}" style="display:inline-block;margin-top:8px;padding:12px 20px;background:${COLORS.primary};color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px">${cta.label}</a>`
     : "";
 
   return `<!doctype html>
@@ -142,13 +150,29 @@ export function appointmentConfirmedForPatient(data: AppointmentEmail): Message 
   const greeting = `${data.psychologistName} confirmó tu turno.`;
   const closing = "Si no vas a poder ir, cancelalo con tiempo desde tu panel.";
 
+  // Con link de videollamada, el botón lleva directo a la sala: es lo que la
+  // persona va a querer tocar cuando llegue la hora, y tenerlo en el correo
+  // evita tener que abrir la app para buscarlo.
+  const cta = data.meetingUrl
+    ? { label: "Entrar a la videollamada", href: data.meetingUrl }
+    : { label: "Ver mis turnos", href: `${data.appUrl}/patient` };
+
+  const lineaLink = data.meetingUrl ? [`Link de la sesión: ${data.meetingUrl}`] : [];
+
   return {
     subject,
-    text: textMessage(greeting, data, closing),
+    text: [greeting, "", ...detailLines(data), ...lineaLink, "", closing].join("\n"),
     html: layout(
       "Tu turno quedó confirmado",
-      [`<strong>${escapeHtml(data.psychologistName)}</strong> confirmó tu turno.`, htmlDetail(data), closing],
-      { label: "Ver mis turnos", href: `${data.appUrl}/patient` }
+      [
+        `<strong>${escapeHtml(data.psychologistName)}</strong> confirmó tu turno.`,
+        htmlDetail(data),
+        ...(data.meetingUrl
+          ? [`<strong>Link de la sesión:</strong> ${escapeHtml(data.meetingUrl)}`]
+          : []),
+        closing,
+      ],
+      cta
     ),
   };
 }

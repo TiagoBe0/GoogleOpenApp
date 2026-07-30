@@ -190,3 +190,32 @@ describe("avisos de turno", () => {
     expect(message.text).toContain("No se te cobró nada");
   });
 });
+
+describe("link de videollamada en el aviso de confirmación", () => {
+  const conLink = { ...base, meetingUrl: "https://meet.jit.si/sala-de-ana" };
+
+  it("aparece en la versión de texto y en la HTML", () => {
+    const msg = appointmentConfirmedForPatient(conLink);
+    expect(msg.text).toContain("https://meet.jit.si/sala-de-ana");
+    expect(msg.html).toContain("https://meet.jit.si/sala-de-ana");
+  });
+
+  it("el botón del correo lleva a la sala, no al panel", () => {
+    const msg = appointmentConfirmedForPatient(conLink);
+    expect(msg.html).toContain('href="https://meet.jit.si/sala-de-ana"');
+    expect(msg.html).toContain("Entrar a la videollamada");
+  });
+
+  it("sin link, el botón sigue llevando al panel", () => {
+    const msg = appointmentConfirmedForPatient(base);
+    expect(msg.html).toContain("/patient");
+    expect(msg.html).not.toContain("Entrar a la videollamada");
+  });
+
+  // Una cancelación no puede ofrecer una sala que ya no se va a usar.
+  it("la cancelación no muestra el link", () => {
+    const msg = appointmentCancelledForPatient(conLink);
+    expect(msg.text).not.toContain("meet.jit.si");
+    expect(msg.html).not.toContain("meet.jit.si");
+  });
+});

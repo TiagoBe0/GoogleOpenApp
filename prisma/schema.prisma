@@ -86,6 +86,10 @@ model Appointment {
   duration        Int      @default(60)
   notes           String?
   status          String   @default("PENDING")
+  /// Link de la videollamada, que carga el profesional al confirmar. Solo
+  /// https: se guarda validado en src/lib/meeting-link.ts, porque termina
+  /// renderizado como enlace en la pantalla del paciente.
+  meetingUrl      String?
   calendarEventId String?
   /// Sube con cada reprogramación. Va en el .ics: sin un número mayor que el
   /// anterior, el cliente de calendario descarta la actualización por vieja.

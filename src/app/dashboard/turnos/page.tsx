@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import TurnoActions from "@/components/TurnoActions";
+import MeetingLinkButton from "@/components/MeetingLinkButton";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   PENDING:   { label: "Pendiente",  cls: "bg-pending-soft text-pending border-pending" },
@@ -189,13 +190,16 @@ export default async function TurnosPage() {
                       <p className="text-xs text-muted mt-1 italic line-clamp-1">&ldquo;{apt.notes}&rdquo;</p>
                     )}
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    {apt.amount != null && (
-                      <p className="text-sm font-bold text-ink">
-                        {apt.currency} {apt.amount.toLocaleString()}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted mt-0.5">{fmt(d)}</p>
+                  <div className="flex flex-shrink-0 items-center gap-3">
+                    <MeetingLinkButton appointmentId={apt.id} meetingUrl={apt.meetingUrl} />
+                    <div className="text-right">
+                      {apt.amount != null && (
+                        <p className="text-sm font-bold text-ink">
+                          {apt.currency} {apt.amount.toLocaleString()}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted mt-0.5">{fmt(d)}</p>
+                    </div>
                   </div>
                 </div>
               );

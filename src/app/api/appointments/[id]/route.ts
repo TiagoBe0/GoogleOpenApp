@@ -13,6 +13,7 @@ import {
   updateCalendarEvent,
 } from "@/lib/google-calendar";
 import { findConflictingAppointment, isWithinAvailability } from "@/lib/appointment-rules";
+import { normalizeMeetingUrl } from "@/lib/meeting-link";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import type { Appointment, User } from "@prisma/client";
 
@@ -186,10 +187,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const { id } = await params;
-  const { status, date } = await req.json();
+  const { status, date, meetingUrl } = await req.json();
 
-  // El cuerpo trae un cambio de estado o una nueva fecha, no las dos cosas.
-  if (date === undefined && !["CONFIRMED", "CANCELLED"].includes(status)) {
+  const cambiaEstado = ["CONFIRMED", "CANCELLED"].includes(status);
+  // `undefined` es "no vino el campo"; `null` o "" son "borrá el link".
+  const cambiaLink = meetingUrl !== undefined;
+
+  // El cuerpo trae un cambio de estado, una nueva fecha, o un link.
+  if (date === undefined && !cambiaEstado && !cambiaLink) {
     return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
   }
 
@@ -207,9 +212,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return reschedule({ appointment, date, isPsychologist });
   }
 
+  // El link lo pone quien atiende. Si lo pudiera cargar el paciente, tendría
+  // dónde plantarle un enlace a cualquier lado al profesional.
+  let linkData: { meetingUrl?: string | null } = {};
+  if (cambiaLink) {
+    if (!isPsychologist) {
+      return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
+    }
+    const link = normalizeMeetingUrl(meetingUrl);
+    if (!link.ok) return NextResponse.json({ error: link.error }, { status: 400 });
+    linkData = { meetingUrl: link.url };
+  }
+
+  // Editar solo el link, sin tocar el estado: pasa cuando el profesional
+  // cambia la sala de una sesión que ya estaba confirmada.
+  if (!cambiaEstado) {
+    const soloLink = await prisma.appointment.update({
+      where: { id },
+      data: linkData,
+      include: { patient: { select: { id: true, name: true, email: true } } },
+    });
+    return NextResponse.json(soloLink);
+  }
+
   const updated = await prisma.appointment.update({
     where: { id },
-    data: { status },
+    data: { status, ...linkData },
     include: {
       patient: { select: { id: true, name: true, email: true } },
     },

@@ -70,7 +70,9 @@ function icsAttachment(
     durationMinutes: parties.data.duration,
     summary: `Sesión con ${parties.data.psychologistName}`,
     description: parties.data.notes,
-    location: parties.location,
+    // Con link de videollamada, la ubicación es el link: Google Calendar y
+    // Outlook lo muestran como enlace y se entra desde el evento agendado.
+    location: parties.data.meetingUrl ?? parties.location,
     organizer: { name: parties.data.psychologistName, email: parties.psychologistEmail },
     attendee: parties.patientEmail
       ? { name: parties.data.patientName, email: parties.patientEmail }
@@ -146,6 +148,7 @@ async function loadParties(appointmentId: string): Promise<Parties | null> {
       timezone: appointment.psychologist.psychologistProfile?.timezone ?? DEFAULT_TIMEZONE,
       notes: appointment.notes,
       appUrl: appUrl(),
+      meetingUrl: appointment.meetingUrl,
     },
     patientEmail,
     psychologistEmail: appointment.psychologist.email ?? null,

@@ -31,6 +31,8 @@ interface Appointment {
   currency: string | null;
   paymentStatus: string | null;
   preferenceId: string | null;
+  /** Link de la videollamada que cargó el profesional, si lo hizo. */
+  meetingUrl: string | null;
 }
 
 interface DashboardAppointment extends Appointment {
@@ -162,6 +164,16 @@ function AppointmentItem({ appointment, onCancel, compact = false }: { appointme
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${status.className}`}>{status.label}</span>
         </div>
       </div>
+      {appointment.meetingUrl && appointment.status === "CONFIRMED" && (
+        <a
+          href={appointment.meetingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 shrink-0 items-center rounded-md bg-primary-soft px-3 text-xs font-semibold text-primary-hi transition-colors hover:bg-primary hover:text-white"
+        >
+          Unirse
+        </a>
+      )}
       {!compact && appointment.status === "PENDING" && (
         <button onClick={() => onCancel(appointment)} className="min-h-11 rounded-md bg-danger-soft px-3 text-xs font-semibold text-danger hover:bg-danger-soft">
           Cancelar
@@ -399,7 +411,9 @@ export default function PatientDashboard({ patient }: Props) {
                     </div>
                   </div>
                   <div className="relative z-10 mt-5 flex gap-2 md:mt-0">
-                    <button className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hi transition-colors"><VideoIcon /> Unirse</button>
+                    {upcoming[0].meetingUrl && (
+                      <a href={upcoming[0].meetingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hi transition-colors"><VideoIcon /> Unirse</a>
+                    )}
                     <button onClick={() => setRescheduleTarget(upcoming[0])} className="min-h-11 rounded-md border border-line-strong px-4 text-sm font-semibold text-muted hover:border-primary hover:bg-primary-soft hover:text-primary transition-colors">Mover</button>
                     {upcoming[0].status === "PENDING" && <button onClick={() => setCancelTarget(upcoming[0])} className="min-h-11 rounded-md border border-line-strong px-4 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-ink transition-colors">Cancelar</button>}
                   </div>

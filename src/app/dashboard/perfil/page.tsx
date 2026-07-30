@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ProfileForm from "@/components/ProfileForm";
+import PushToggle from "@/components/PushToggle";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -25,6 +26,15 @@ export default async function ProfilePage() {
           initialProfile={profile}
         />
       </div>
+
+      <section className="mt-8 rounded-lg border border-line bg-surface p-6">
+        <h2 className="font-display text-xl font-semibold text-ink">Avisos en este dispositivo</h2>
+        <p className="mb-4 mt-1 text-sm text-muted">
+          Se configura por dispositivo: activalo en el teléfono y en la computadora
+          del consultorio por separado.
+        </p>
+        <PushToggle />
+      </section>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { prisma } from "./prisma";
 import { sendMail, type MailAttachment } from "./mailer";
+import { sendPush } from "./push";
+import * as push from "./push-payloads";
 import { buildIcs } from "./ics";
 import { DEFAULT_TIMEZONE } from "./timezone";
 import {
@@ -14,19 +16,36 @@ import {
 } from "./emails";
 
 /**
- * Avisos por correo del ciclo de vida del turno. Se llaman desde `after()` en
- * las rutas: nada de esto bloquea la respuesta ni puede hacerla fallar.
+ * Avisos del ciclo de vida del turno, por correo y por push. Se llaman desde
+ * `after()` en las rutas: nada de esto bloquea la respuesta ni puede hacerla
+ * fallar.
+ *
+ * Los dos canales van siempre juntos y son independientes: el correo llega
+ * aunque la persona nunca haya activado los avisos del navegador, y el push
+ * llega aunque el SMTP esté caído. Ninguno de los dos lanza.
  */
 
 interface Parties {
   data: AppointmentEmail;
   patientEmail: string | null;
   psychologistEmail: string | null;
+  /** Null cuando el paciente reservó sin cuenta: no hay a quién notificar. */
+  patientId: string | null;
+  psychologistId: string;
   appointmentId: string;
   /** Dirección del consultorio, solo si atiende presencial. */
   location: string | null;
   /** Versión del evento: sube con cada reprogramación. */
   sequence: number;
+}
+
+/** Datos que necesitan los avisos push, derivados de los que ya se cargaron. */
+function pushData(parties: Parties): push.AppointmentPush {
+  return {
+    appointmentId: parties.appointmentId,
+    date: parties.data.date,
+    timezone: parties.data.timezone,
+  };
 }
 
 /**
@@ -81,9 +100,10 @@ async function loadParties(appointmentId: string): Promise<Parties | null> {
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: {
-      patient: { select: { name: true, email: true } },
+      patient: { select: { id: true, name: true, email: true } },
       psychologist: {
         select: {
+          id: true,
           name: true,
           email: true,
           psychologistProfile: {
@@ -129,6 +149,8 @@ async function loadParties(appointmentId: string): Promise<Parties | null> {
     },
     patientEmail,
     psychologistEmail: appointment.psychologist.email ?? null,
+    patientId: appointment.patient?.id ?? null,
+    psychologistId: appointment.psychologist.id,
   };
 }
 
@@ -154,6 +176,11 @@ export function notifyNewAppointment(appointmentId: string): Promise<void> {
       parties.patientEmail
         ? sendMail(parties.patientEmail, newAppointmentForPatient(parties.data))
         : null,
+      sendPush(parties.psychologistId, push.newAppointmentForPsychologist(pushData(parties))),
+      // Quien reservó sin cuenta no tiene dónde recibir un push.
+      parties.patientId
+        ? sendPush(parties.patientId, push.newAppointmentForPatient(pushData(parties)))
+        : null,
     ]);
   });
 }
@@ -161,13 +188,20 @@ export function notifyNewAppointment(appointmentId: string): Promise<void> {
 export function notifyAppointmentConfirmed(appointmentId: string): Promise<void> {
   return safely(`turno confirmado ${appointmentId}`, async () => {
     const parties = await loadParties(appointmentId);
-    if (!parties?.patientEmail) return;
+    if (!parties) return;
 
-    await sendMail(
-      parties.patientEmail,
-      appointmentConfirmedForPatient(parties.data),
-      icsAttachment(parties, "CONFIRMED")
-    );
+    await Promise.all([
+      parties.patientEmail
+        ? sendMail(
+            parties.patientEmail,
+            appointmentConfirmedForPatient(parties.data),
+            icsAttachment(parties, "CONFIRMED")
+          )
+        : null,
+      parties.patientId
+        ? sendPush(parties.patientId, push.appointmentConfirmedForPatient(pushData(parties)))
+        : null,
+    ]);
   });
 }
 
@@ -186,13 +220,21 @@ export function notifyAppointmentRescheduled(
 
     const destinatario =
       movedBy === "PATIENT" ? parties.psychologistEmail : parties.patientEmail;
-    if (!destinatario) return;
+    const destinatarioId =
+      movedBy === "PATIENT" ? parties.psychologistId : parties.patientId;
 
-    await sendMail(
-      destinatario,
-      appointmentRescheduled({ ...parties.data, previousDate, movedBy }),
-      icsAttachment(parties, "CONFIRMED")
-    );
+    await Promise.all([
+      destinatario
+        ? sendMail(
+            destinatario,
+            appointmentRescheduled({ ...parties.data, previousDate, movedBy }),
+            icsAttachment(parties, "CONFIRMED")
+          )
+        : null,
+      destinatarioId
+        ? sendPush(destinatarioId, push.appointmentRescheduled(pushData(parties), movedBy))
+        : null,
+    ]);
   });
 }
 
@@ -200,9 +242,16 @@ export function notifyAppointmentRescheduled(
 export function notifyPaymentFailed(appointmentId: string): Promise<void> {
   return safely(`pago rechazado ${appointmentId}`, async () => {
     const parties = await loadParties(appointmentId);
-    if (!parties?.patientEmail) return;
+    if (!parties) return;
 
-    await sendMail(parties.patientEmail, paymentFailedForPatient(parties.data));
+    await Promise.all([
+      parties.patientEmail
+        ? sendMail(parties.patientEmail, paymentFailedForPatient(parties.data))
+        : null,
+      parties.patientId
+        ? sendPush(parties.patientId, push.paymentFailedForPatient(pushData(parties)))
+        : null,
+    ]);
   });
 }
 
@@ -219,22 +268,33 @@ export function notifyAppointmentCancelled(
     const attachment = icsAttachment(parties, "CANCELLED");
 
     if (cancelledBy === "PSYCHOLOGIST") {
-      if (parties.patientEmail) {
-        await sendMail(
-          parties.patientEmail,
-          appointmentCancelledForPatient(parties.data),
-          attachment
-        );
-      }
+      await Promise.all([
+        parties.patientEmail
+          ? sendMail(
+              parties.patientEmail,
+              appointmentCancelledForPatient(parties.data),
+              attachment
+            )
+          : null,
+        parties.patientId
+          ? sendPush(parties.patientId, push.appointmentCancelledForPatient(pushData(parties)))
+          : null,
+      ]);
       return;
     }
 
-    if (parties.psychologistEmail) {
-      await sendMail(
-        parties.psychologistEmail,
-        appointmentCancelledForPsychologist(parties.data),
-        attachment
-      );
-    }
+    await Promise.all([
+      parties.psychologistEmail
+        ? sendMail(
+            parties.psychologistEmail,
+            appointmentCancelledForPsychologist(parties.data),
+            attachment
+          )
+        : null,
+      sendPush(
+        parties.psychologistId,
+        push.appointmentCancelledForPsychologist(pushData(parties))
+      ),
+    ]);
   });
 }

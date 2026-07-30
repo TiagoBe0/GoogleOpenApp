@@ -79,3 +79,51 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
   }
 });
+
+/*
+ * Avisos push.
+ *
+ * El contenido lo arma el servidor en src/lib/push-payloads.ts y viaja cifrado.
+ * Acá solo se muestra: nada de pedir datos ni decidir texto, porque este código
+ * corre sin sesión y no debe poder leer nada del usuario.
+ */
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    // Un push malformado no puede dejar al service worker sin mostrar nada:
+    // se cae al aviso genérico de abajo.
+  }
+
+  const title = payload.title || "PsicoLink";
+  const options = {
+    body: payload.body || "Tenés una novedad en tus turnos.",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    // Reemplaza el aviso anterior del mismo turno en vez de apilarse.
+    tag: payload.tag || "psicolink",
+    data: { url: payload.url || "/" },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const target = new URL(event.notification.data?.url || "/", self.location.origin);
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      // Si la app ya está abierta, se la enfoca y se navega ahí. Abrir una
+      // segunda ventana deja al usuario con dos sesiones de la misma app.
+      for (const win of wins) {
+        if (new URL(win.url).origin === target.origin && "focus" in win) {
+          return win.focus().then((w) => (w.navigate ? w.navigate(target.href) : w));
+        }
+      }
+      return self.clients.openWindow(target.href);
+    }),
+  );
+});

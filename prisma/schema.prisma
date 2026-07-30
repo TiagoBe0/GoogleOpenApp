@@ -33,6 +33,29 @@ model User {
   reviewsReceived          Review[]      @relation("PsychologistReviews")
   psychologistProfile      PsychologistProfile?
   availability             AvailabilityRule[]
+  pushSubscriptions        PushSubscription[]
+}
+
+/// Navegador registrado para recibir avisos push. Una persona puede tener
+/// varios: el teléfono y la computadora del consultorio son suscripciones
+/// distintas, y hay que avisarle en las dos.
+model PushSubscription {
+  id     String @id @default(cuid())
+  userId String
+  /// URL que da el navegador para empujarle el aviso. Es el identificador real
+  /// de la suscripción: si el navegador la renueva, cambia.
+  endpoint String @unique
+  /// Claves de cifrado del navegador. El contenido del aviso viaja cifrado
+  /// extremo a extremo, así que el servicio de push (Google, Mozilla) no puede
+  /// leer de qué turno se trata.
+  p256dh String
+  auth   String
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// Franja semanal recurrente en la que el profesional atiende. Un día puede

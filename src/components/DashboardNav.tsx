@@ -1,9 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { href: string; label: string; icon: ReactNode; badge?: string }[] = [
   {
     href: "/dashboard",
     label: "Inicio",
@@ -19,6 +20,15 @@ const NAV_ITEMS = [
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/dashboard/disponibilidad",
+    label: "Disponibilidad",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },
@@ -47,23 +57,23 @@ export default function DashboardNav() {
 
   return (
     <>
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Menú</p>
+      <p className="text-[10px] font-semibold text-muted uppercase tracking-wider px-3 mb-2">Menú</p>
       {NAV_ITEMS.map(({ href, label, icon, badge }) => {
         const active = pathname === href;
         return (
           <Link
             key={href}
             href={href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
               ${active
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted hover:bg-surface-2 hover:text-ink"
               }`}
           >
-            <span className={active ? "text-white" : "text-gray-400"}>{icon}</span>
+            <span className={active ? "text-white" : "text-muted"}>{icon}</span>
             <span className="flex-1">{label}</span>
             {badge && (
-              <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-normal">
+              <span className="text-[10px] bg-surface-2 text-muted px-1.5 py-0.5 rounded-md font-normal">
                 {badge}
               </span>
             )}

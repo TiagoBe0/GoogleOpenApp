@@ -1,20 +1,91 @@
 @import "tailwindcss";
 
+/* Tokens del sistema de diseño. El fundamento de cada decisión está en DESIGN.md;
+   no cambiar valores acá sin actualizar ese documento. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Neutros cálidos. Reemplazan los grises fríos sueltos que se venían usando
+     a mano (habia 10 pasos distintos de gray-* elegidos caso por caso). */
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --surface-2: #f5f2ee;
+  --border: #e8e4de;
+  --border-strong: #d6d0c7;
+  --muted: #6f6862;
+  --text: #2a2623;
+
+  /* Acento único. Verde grounded: el rubro espera verde o azul, no violeta, y
+     los azules fríos leen clínico en salud mental. */
+  --primary: #1a6b54;
+  --primary-hi: #14563f;
+  --primary-soft: #e6f2ed;
+
+  /* Semánticos. Confirmado reutiliza --primary a propósito: confirmar ES el
+     estado de éxito del producto. El error es ladrillo apagado, porque un rojo
+     saturado lee como emergencia médica. */
+  --pending: #a66a00;
+  --pending-soft: #fbf1de;
+  --error: #a6362c;
+  --error-soft: #f9ebe8;
+  --info: #2f5c7a;
+
+  /* Compatibilidad con el scaffold original. */
+  --background: var(--bg);
+  --foreground: var(--text);
+}
+
+/* Oscuro: superficies marrón muy oscuro en vez de gris azulado, texto blanco
+   roto en vez de blanco puro, y verde desaturado para que no vibre. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1816;
+    --surface: #221f1c;
+    --surface-2: #2a2622;
+    --border: #332f2a;
+    --border-strong: #443f38;
+    --muted: #a39a90;
+    --text: #ede8e1;
+    --primary: #5faf92;
+    --primary-hi: #7cc4a9;
+    --primary-soft: #1e332c;
+    --pending: #d9a24b;
+    --pending-soft: #33291a;
+    --error: #d4796d;
+    --error-soft: #33211e;
+    --info: #7fa8c4;
+  }
 }
 
 @theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-muted: var(--muted);
+  --color-ink: var(--text);
+  --color-primary: var(--primary);
+  --color-primary-hi: var(--primary-hi);
+  --color-primary-soft: var(--primary-soft);
+  --color-pending: var(--pending);
+  --color-pending-soft: var(--pending-soft);
+  --color-danger: var(--error);
+  --color-danger-soft: var(--error-soft);
+  --color-info: var(--info);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* layout.tsx carga las fuentes y expone estas variables. El scaffold apuntaba
+     --font-sans a --font-geist-sans, una variable que nadie definía. */
+  --font-sans: var(--font-geist);
+  --font-display: var(--font-fraunces);
 }
 
-
+/* Sin font-family acá a propósito. Las utilidades de Tailwind viven en
+   @layer utilities y el CSS sin capa les gana sin importar la especificidad, así
+   que una regla de fuente en body pisa en silencio la clase que pone layout.tsx
+   y la app entera renderiza en la fuente del body mientras igual descarga el
+   webfont. Ya pasó una vez con Arial. */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }

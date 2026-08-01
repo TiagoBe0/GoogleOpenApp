@@ -27,6 +27,8 @@ function LoginForm() {
     return "";
   });
   const [loading, setLoading] = useState(false);
+  const inputClass =
+    "min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-base text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-soft";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -57,29 +59,44 @@ function LoginForm() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-2xl mb-4">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Iniciar sesión</h1>
-          <p className="text-gray-500 text-sm mt-1">Bienvenido de vuelta</p>
+    <main className="min-h-screen bg-bg text-ink">
+      <section className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_420px] lg:px-10">
+        <div className="hidden max-w-xl lg:block">
+          <Link href="/" className="font-display text-2xl font-semibold text-ink">
+            PsicoLink
+          </Link>
+          <p className="mt-12 text-sm font-semibold uppercase tracking-normal text-primary">
+            Agenda clara para terapia
+          </p>
+          <h1 className="mt-4 font-display text-5xl font-semibold leading-tight text-ink">
+            Volvé a tus turnos sin perder el hilo.
+          </h1>
+          <p className="mt-5 text-lg leading-8 text-muted">
+            Pacientes y profesionales entran al mismo sistema: solicitudes, pagos y
+            calendario con estados simples.
+          </p>
         </div>
+
+        <div className="w-full rounded-lg border border-line bg-surface p-6 shadow-sm sm:p-8">
+          <Link href="/" className="mb-8 block font-display text-2xl font-semibold text-ink lg:hidden">
+            PsicoLink
+          </Link>
+          <div className="mb-8">
+            <h1 className="font-display text-4xl font-semibold text-ink">Iniciar sesión</h1>
+            <p className="mt-2 text-base text-muted">Bienvenido de vuelta</p>
+          </div>
 
         <GoogleButton label="Entrar con Google" callbackUrl={callbackUrl} />
 
         <div className="flex items-center gap-3 my-6">
-          <hr className="flex-1 border-gray-200" />
-          <span className="text-xs text-gray-400 font-medium">O con email</span>
-          <hr className="flex-1 border-gray-200" />
+          <hr className="flex-1 border-line" />
+          <span className="text-xs font-semibold uppercase tracking-normal text-muted">O con email</span>
+          <hr className="flex-1 border-line" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="mb-1 block text-sm font-semibold text-ink">Email</label>
             <input
               name="email"
               type="email"
@@ -87,11 +104,11 @@ function LoginForm() {
               placeholder="juan@ejemplo.com"
               value={form.email}
               onChange={handleChange}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <label className="mb-1 block text-sm font-semibold text-ink">Contraseña</label>
             <input
               name="password"
               type="password"
@@ -99,12 +116,12 @@ function LoginForm() {
               placeholder="Tu contraseña"
               value={form.password}
               onChange={handleChange}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className={inputClass}
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600">
+            <div className="rounded-md border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
               {error}
             </div>
           )}
@@ -112,19 +129,20 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+            className="min-h-11 w-full rounded-md bg-primary px-4 text-base font-semibold text-white transition-colors hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted"
           >
             {loading ? "Iniciando sesión..." : "Iniciar sesión"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="mt-6 text-base text-muted">
           ¿No tienes cuenta?{" "}
-          <Link href="/register" className="text-indigo-600 font-medium hover:underline">
+          <Link href="/register" className="font-semibold text-primary hover:underline">
             Regístrate gratis
           </Link>
         </p>
       </div>
+      </section>
     </main>
   );
 }

@@ -10,6 +10,9 @@ interface Patient {
   createdAt: string;
 }
 
+const inputCls =
+  "min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-base text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary-soft";
+
 export default function PatientsList() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,24 +98,24 @@ export default function PatientsList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Mis pacientes</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {loading ? "Cargando..." : `${patients.length} paciente${patients.length !== 1 ? "s" : ""} vinculado${patients.length !== 1 ? "s" : ""}`}
+          <h1 className="font-display text-3xl font-semibold text-ink">Mis pacientes</h1>
+          <p className="text-sm text-muted mt-1">
+            {loading ? "Cargando…" : `${patients.length} paciente${patients.length !== 1 ? "s" : ""} vinculado${patients.length !== 1 ? "s" : ""}`}
           </p>
         </div>
         <button
           onClick={() => { setShowModal(true); setError(""); setSuccess(""); }}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          className="min-h-11 flex items-center gap-2 bg-primary hover:bg-primary-hi text-white text-sm font-semibold px-4 rounded-md transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Vincular paciente
+          Vincular <span className="hidden sm:inline">paciente</span>
         </button>
       </div>
 
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 flex items-center gap-2">
+        <div className="bg-primary-soft border border-primary rounded-md px-4 py-3 text-sm font-medium text-primary flex items-center gap-2">
           <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
@@ -124,20 +127,16 @@ export default function PatientsList() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
+            <div key={i} className="h-20 bg-surface rounded-lg border border-line animate-pulse" />
           ))}
         </div>
       ) : patients.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <p className="text-gray-500 text-sm">No tenés pacientes vinculados todavía.</p>
+        <div className="bg-surface rounded-lg border border-line p-8">
+          <p className="font-semibold text-ink">No tenés pacientes vinculados todavía.</p>
+          <p className="mt-1 text-sm text-muted">Agregá un paciente por email para habilitar seguimiento y turnos.</p>
           <button
             onClick={() => setShowModal(true)}
-            className="mt-4 text-indigo-600 text-sm font-medium hover:underline"
+            className="mt-4 min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hi transition-colors"
           >
             Vincular tu primer paciente
           </button>
@@ -145,25 +144,25 @@ export default function PatientsList() {
       ) : (
         <div className="space-y-3">
           {patients.map((p) => (
-            <div key={p.id} className="bg-white rounded-2xl border border-gray-200 px-5 py-4 flex items-center gap-4">
+            <div key={p.id} className="bg-surface rounded-lg border border-line px-5 py-4 flex items-center gap-4">
               {p.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={p.image} alt="" className="w-11 h-11 rounded-full flex-shrink-0" />
               ) : (
-                <div className="w-11 h-11 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold flex-shrink-0">
+                <div className="w-11 h-11 bg-primary-soft rounded-full flex items-center justify-center text-primary font-semibold flex-shrink-0">
                   {initials(p.name, p.email)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 truncate">{p.name || "Sin nombre"}</p>
-                <p className="text-sm text-gray-400 truncate">{p.email}</p>
+                <p className="font-semibold text-ink truncate">{p.name || "Sin nombre"}</p>
+                <p className="text-sm text-muted truncate">{p.email}</p>
               </div>
               <button
                 onClick={() => handleRemove(p.id)}
                 disabled={removingId === p.id}
-                className="text-xs text-gray-400 hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
+                className="min-h-11 text-sm text-muted hover:text-danger px-3 rounded-md hover:bg-danger-soft transition-colors flex-shrink-0 disabled:opacity-50"
               >
-                {removingId === p.id ? "..." : "Desvincular"}
+                {removingId === p.id ? "…" : "Desvincular"}
               </button>
             </div>
           ))}
@@ -173,18 +172,25 @@ export default function PatientsList() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Vincular paciente</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="bg-surface rounded-lg shadow-2xl w-full max-w-sm overflow-hidden border border-line">
+            <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-line">
+              <div>
+                <h2 className="font-display text-2xl font-semibold text-ink">Vincular paciente</h2>
+                <p className="mt-1 text-sm text-muted">Usá el email de una cuenta paciente.</p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                aria-label="Cerrar"
+                className="flex h-11 w-11 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-ink transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
             <form onSubmit={handleLink} className="px-6 py-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-semibold text-ink mb-1.5">
                   Email del paciente
                 </label>
                 <input
@@ -193,13 +199,13 @@ export default function PatientsList() {
                   placeholder="paciente@email.com"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className={inputCls}
                 />
-                <p className="text-xs text-gray-400 mt-1.5">El paciente debe tener una cuenta registrada como paciente.</p>
+                <p className="text-xs text-muted mt-1.5">El paciente debe tener una cuenta registrada como paciente.</p>
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600">
+                <div className="bg-danger-soft border border-danger rounded-md px-3 py-2 text-sm font-medium text-danger">
                   {error}
                 </div>
               )}
@@ -208,16 +214,16 @@ export default function PatientsList() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                  className="min-h-11 flex-1 rounded-md border border-line-strong text-base font-semibold text-ink hover:bg-surface-2 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={linking}
-                  className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium transition-colors"
+                  className="min-h-11 flex-1 rounded-md bg-primary text-base font-semibold text-white hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted transition-colors"
                 >
-                  {linking ? "Vinculando..." : "Vincular"}
+                  {linking ? "Vinculando…" : "Vincular"}
                 </button>
               </div>
             </form>

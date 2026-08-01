@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import GoogleButton from "@/components/GoogleButton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -13,6 +14,8 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const inputClass =
+    "min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-base text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-soft";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -55,55 +58,63 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-2xl mb-4">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Crear cuenta</h1>
-          <p className="text-gray-500 text-sm mt-1">Elegí tu rol para comenzar</p>
+    <main className="min-h-screen bg-bg text-ink">
+      <section className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_460px] lg:px-10">
+        <div className="hidden max-w-xl lg:block">
+          <Link href="/" className="font-display text-2xl font-semibold text-ink">
+            PsicoLink
+          </Link>
+          <p className="mt-12 text-sm font-semibold uppercase tracking-normal text-primary">
+            Empezá con el rol correcto
+          </p>
+          <h1 className="mt-4 font-display text-5xl font-semibold leading-tight text-ink">
+            Una cuenta para reservar o gestionar terapia.
+          </h1>
+          <p className="mt-5 text-lg leading-8 text-muted">
+            Pacientes reservan turnos con disponibilidad real. Profesionales reciben
+            solicitudes, pagos y calendario desde un panel de trabajo.
+          </p>
         </div>
 
-        {/* Role selector */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="w-full rounded-lg border border-line bg-surface p-6 shadow-sm sm:p-8">
+          <Link href="/" className="mb-8 block font-display text-2xl font-semibold text-ink lg:hidden">
+            PsicoLink
+          </Link>
+          <div className="mb-6">
+            <h1 className="font-display text-4xl font-semibold text-ink">Crear cuenta</h1>
+            <p className="mt-2 text-base text-muted">Elegí tu rol para comenzar</p>
+          </div>
+
+        <div className="mb-6 grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => setRole("PATIENT")}
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+            className={`min-h-[116px] rounded-md border p-4 text-left transition-colors ${
               role === "PATIENT"
-                ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                : "border-gray-200 text-gray-500 hover:border-gray-300"
+                ? "border-primary bg-primary-soft text-primary"
+                : "border-line-strong bg-surface text-muted hover:bg-surface-2"
             }`}
           >
-            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span className="text-sm font-semibold">Paciente</span>
-            <span className="text-[11px] text-center leading-tight opacity-70">Reservá turnos con tu psicólogo</span>
+            <span className="block text-base font-semibold text-ink">Paciente</span>
+            <span className="mt-2 block text-xs leading-5">Reservá turnos con tu psicólogo</span>
           </button>
           <button
             type="button"
             onClick={() => setRole("PSYCHOLOGIST")}
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+            className={`min-h-[116px] rounded-md border p-4 text-left transition-colors ${
               role === "PSYCHOLOGIST"
-                ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                : "border-gray-200 text-gray-500 hover:border-gray-300"
+                ? "border-primary bg-primary-soft text-primary"
+                : "border-line-strong bg-surface text-muted hover:bg-surface-2"
             }`}
           >
-            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <span className="text-sm font-semibold">Psicólogo</span>
-            <span className="text-[11px] text-center leading-tight opacity-70">Gestioná tu agenda y pacientes</span>
+            <span className="block text-base font-semibold text-ink">Psicólogo</span>
+            <span className="mt-2 block text-xs leading-5">Gestioná tu agenda y pacientes</span>
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+            <label className="mb-1 block text-sm font-semibold text-ink">Nombre completo</label>
             <input
               name="name"
               type="text"
@@ -111,11 +122,11 @@ export default function RegisterPage() {
               placeholder="Juan García"
               value={form.name}
               onChange={handleChange}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="mb-1 block text-sm font-semibold text-ink">Email</label>
             <input
               name="email"
               type="email"
@@ -123,11 +134,11 @@ export default function RegisterPage() {
               placeholder="juan@ejemplo.com"
               value={form.email}
               onChange={handleChange}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <label className="mb-1 block text-sm font-semibold text-ink">Contraseña</label>
             <input
               name="password"
               type="password"
@@ -135,11 +146,11 @@ export default function RegisterPage() {
               placeholder="Mínimo 8 caracteres"
               value={form.password}
               onChange={handleChange}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+            <label className="mb-1 block text-sm font-semibold text-ink">Confirmar contraseña</label>
             <input
               name="confirm"
               type="password"
@@ -147,12 +158,12 @@ export default function RegisterPage() {
               placeholder="Repite tu contraseña"
               value={form.confirm}
               onChange={handleChange}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className={inputClass}
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600">
+            <div className="rounded-md border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
               {error}
             </div>
           )}
@@ -160,19 +171,33 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+            className="min-h-11 w-full rounded-md bg-primary px-4 text-base font-semibold text-white transition-colors hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted"
           >
             {loading ? "Creando cuenta..." : `Crear cuenta como ${role === "PSYCHOLOGIST" ? "psicólogo" : "paciente"}`}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <div className="mt-6 flex items-center gap-3" aria-hidden>
+          <span className="h-px flex-1 bg-line" />
+          <span className="text-sm text-muted">o</span>
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <div className="mt-6">
+          <GoogleButton label="Registrarme con Google" />
+          <p className="mt-2 text-sm text-muted">
+            Te preguntamos si sos paciente o psicólogo apenas entres.
+          </p>
+        </div>
+
+        <p className="mt-6 text-base text-muted">
           ¿Ya tenés cuenta?{" "}
-          <Link href="/login" className="text-indigo-600 font-medium hover:underline">
+          <Link href="/login" className="font-semibold text-primary hover:underline">
             Iniciá sesión
           </Link>
         </p>
       </div>
+      </section>
     </main>
   );
 }

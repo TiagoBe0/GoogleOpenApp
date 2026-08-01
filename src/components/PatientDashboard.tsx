@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import PsicoLinkAppointmentModal from "@/components/PsicoLinkAppointmentModal";
+import BrowsePsychologists from "@/components/BrowsePsychologists";
+import RescheduleModal from "@/components/RescheduleModal";
 import ReviewsPanel from "@/components/ReviewsPanel";
 
 interface Patient {
@@ -24,11 +26,13 @@ interface Appointment {
   duration: number;
   notes: string | null;
   status: "PENDING" | "CONFIRMED" | "CANCELLED";
-  psychologist: { name: string | null; email: string };
+  psychologist: { id: string; name: string | null; email: string };
   amount: number | null;
   currency: string | null;
   paymentStatus: string | null;
   preferenceId: string | null;
+  /** Link de la videollamada que cargó el profesional, si lo hizo. */
+  meetingUrl: string | null;
 }
 
 interface DashboardAppointment extends Appointment {
@@ -43,10 +47,11 @@ interface Props {
   patient: Patient;
 }
 
-type Section = "home" | "agenda" | "history" | "payments" | "profile";
+type Section = "home" | "browse" | "agenda" | "history" | "payments" | "profile";
 
 const SECTION_TITLES: Record<Section, string> = {
   home: "Inicio",
+  browse: "Navegar",
   agenda: "Mis turnos",
   history: "Historial",
   payments: "Pagos",
@@ -54,9 +59,9 @@ const SECTION_TITLES: Record<Section, string> = {
 };
 
 const STATUS_STYLES: Record<Appointment["status"], { label: string; className: string }> = {
-  PENDING: { label: "Pendiente", className: "bg-[#FEF4E6] text-[#C07A20]" },
-  CONFIRMED: { label: "Confirmado", className: "bg-[#D0E8D8] text-[#557C5F]" },
-  CANCELLED: { label: "Cancelado", className: "bg-[#FDF0EE] text-[#C0392B]" },
+  PENDING: { label: "Pendiente", className: "bg-pending-soft text-pending" },
+  CONFIRMED: { label: "Confirmado", className: "bg-primary-soft text-primary-hi" },
+  CANCELLED: { label: "Cancelado", className: "bg-danger-soft text-danger" },
 };
 
 function initials(name?: string | null, email?: string | null) {
@@ -100,6 +105,10 @@ function CardIcon() {
   return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.4" /><path d="M1 7h14" stroke="currentColor" strokeWidth="1.4" /><circle cx="4.5" cy="10" r="1" fill="currentColor" /></svg>;
 }
 
+function SearchIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" /><path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>;
+}
+
 function UserIcon() {
   return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.4" /><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>;
 }
@@ -119,24 +128,21 @@ function VideoIcon() {
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="grid h-7 w-7 grid-cols-2 gap-0.5">
-        <span className={`rounded-[3px] ${dark ? "bg-white" : "bg-[#2D4270]"}`} />
-        <span className="rounded-[3px] bg-[#8AACC8]" />
-        <span className="rounded-[3px] bg-[#7FA98A]" />
-        <span className="rounded-[3px] bg-[#D8EAF7]" />
+      <div className={`flex h-8 w-8 items-center justify-center rounded-md ${dark ? "bg-white text-primary" : "bg-primary text-white"}`}>
+        <CalendarIcon />
       </div>
-      <span className={`font-serif text-lg ${dark ? "text-white" : "text-[#2D4270]"}`}>PsicoLink</span>
+      <span className={`font-display text-lg font-semibold ${dark ? "text-white" : "text-ink"}`}>PsicoLink</span>
     </div>
   );
 }
 
 function StatCard({ icon, value, label, detail, tone }: { icon: string; value: string; label: string; detail: string; tone: string }) {
   return (
-    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-5">
-      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-[10px] ${tone}`}>{icon}</div>
-      <div className="font-serif text-3xl text-[#2D4270]">{value}</div>
-      <div className="mt-1 text-xs text-[#8A96A8]">{label}</div>
-      <div className="mt-3 text-xs font-semibold text-[#7FA98A]">{detail}</div>
+    <div className="rounded-lg border border-line bg-surface p-5">
+      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-md ${tone}`}>{icon}</div>
+      <div className="font-display text-3xl font-semibold text-ink">{value}</div>
+      <div className="mt-1 text-xs text-muted">{label}</div>
+      <div className="mt-3 text-xs font-semibold text-primary">{detail}</div>
     </div>
   );
 }
@@ -145,21 +151,31 @@ function AppointmentItem({ appointment, onCancel, compact = false }: { appointme
   const status = STATUS_STYLES[appointment.status];
 
   return (
-    <div className="flex items-center gap-4 border-b border-[#E2E8F0] py-3 last:border-b-0 last:pb-0 first:pt-0">
-      <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-[10px] bg-[#EEF2FA]">
-        <div className="font-serif text-[22px] leading-none text-[#2D4270]">{appointment.day}</div>
-        <div className="text-[9px] font-semibold uppercase tracking-wide text-[#8A96A8]">{appointment.dayName}</div>
+    <div className="flex items-center gap-4 border-b border-line py-3 last:border-b-0 last:pb-0 first:pt-0">
+      <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-md bg-surface-2">
+        <div className="font-display text-[22px] leading-none text-ink">{appointment.day}</div>
+        <div className="text-[9px] font-semibold uppercase tracking-wide text-muted">{appointment.dayName}</div>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold text-[#1C2940]">{appointment.time}</div>
-        <div className="mt-0.5 truncate text-xs text-[#8A96A8]">{appointment.professional}</div>
+        <div className="text-sm font-semibold text-ink">{appointment.time}</div>
+        <div className="mt-0.5 truncate text-xs text-muted">{appointment.professional}</div>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-[#D0E8D8] px-2.5 py-1 text-[10px] font-semibold text-[#557C5F]">Online</span>
+          <span className="rounded-full bg-primary-soft px-2.5 py-1 text-[10px] font-semibold text-primary">Online</span>
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${status.className}`}>{status.label}</span>
         </div>
       </div>
+      {appointment.meetingUrl && appointment.status === "CONFIRMED" && (
+        <a
+          href={appointment.meetingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 shrink-0 items-center rounded-md bg-primary-soft px-3 text-xs font-semibold text-primary-hi transition-colors hover:bg-primary hover:text-white"
+        >
+          Unirse
+        </a>
+      )}
       {!compact && appointment.status === "PENDING" && (
-        <button onClick={() => onCancel(appointment)} className="rounded-lg bg-[#FDF0EE] px-3 py-2 text-xs font-semibold text-[#C0392B] hover:bg-[#FAD9D5]">
+        <button onClick={() => onCancel(appointment)} className="min-h-11 rounded-md bg-danger-soft px-3 text-xs font-semibold text-danger hover:bg-danger-soft">
           Cancelar
         </button>
       )}
@@ -171,7 +187,7 @@ function EmptyState({ label, action }: { label: string; action?: React.ReactNode
   return (
     <div className="flex flex-col items-center gap-3 px-5 py-10 text-center">
       <CalendarIcon />
-      <p className="text-sm text-[#8A96A8]">{label}</p>
+      <p className="text-sm text-muted">{label}</p>
       {action}
     </div>
   );
@@ -185,6 +201,7 @@ export default function PatientDashboard({ patient }: Props) {
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<DashboardAppointment | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<DashboardAppointment | null>(null);
   const [cancelledMessage, setCancelledMessage] = useState(false);
   const [linkEmail, setLinkEmail] = useState("");
   const [linking, setLinking] = useState(false);
@@ -289,6 +306,7 @@ export default function PatientDashboard({ patient }: Props) {
 
   const navItems: Array<{ id: Section; label: string; icon: React.ReactNode; badge?: number }> = [
     { id: "home", label: "Inicio", icon: <HomeIcon /> },
+    { id: "browse", label: "Navegar", icon: <SearchIcon /> },
     { id: "agenda", label: "Mis turnos", icon: <CalendarIcon />, badge: upcoming.length || undefined },
     { id: "history", label: "Historial", icon: <HistoryIcon /> },
     { id: "payments", label: "Pagos", icon: <CardIcon />, badge: pendingCount || undefined },
@@ -297,77 +315,79 @@ export default function PatientDashboard({ patient }: Props) {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] p-6">
-        <div className="h-20 rounded-2xl bg-white" />
+      <div className="min-h-screen bg-bg p-6">
+        <div className="h-20 rounded-lg bg-surface" />
         <div className="mt-6 grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 rounded-2xl bg-white" />)}
+          {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 rounded-lg bg-surface" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F4F6FA] text-[#1C2940]">
-      <aside className="hidden w-60 shrink-0 flex-col overflow-hidden bg-[#2D4270] md:flex">
-        <div className="border-b border-white/10 px-5 py-5">
-          <Logo dark />
+    <div className="flex h-screen overflow-hidden bg-bg text-ink">
+      {/* Superficie hundida cálida, no azul marino: el paciente y el profesional
+          tienen que leerse como el mismo producto. Ver DESIGN.md. */}
+      <aside className="hidden w-60 shrink-0 flex-col overflow-hidden border-r border-line bg-surface-2 md:flex">
+        <div className="border-b border-line px-5 py-5">
+          <Logo />
         </div>
-        <div className="px-3 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.7px] text-white/35">Menú</div>
+        <div className="px-3 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.7px] text-muted">Menú</div>
         <nav className="flex-1 overflow-y-auto px-3">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setSection(item.id)}
-              className={`mb-0.5 flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-left text-sm font-medium transition ${
-                section === item.id ? "bg-white/15 text-white" : "text-white/65 hover:bg-white/10 hover:text-white"
+              className={`mb-0.5 flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                section === item.id ? "bg-primary text-white" : "text-muted hover:bg-surface hover:text-ink"
               }`}
             >
               {item.icon}
               {item.label}
-              {item.badge ? <span className="ml-auto rounded-full bg-[#7FA98A] px-2 py-0.5 text-[10px] font-bold text-white">{item.badge}</span> : null}
+              {item.badge ? <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">{item.badge}</span> : null}
             </button>
           ))}
         </nav>
-        <div className="border-t border-white/10 p-3">
-          <button onClick={() => setSection("profile")} className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-left hover:bg-white/10">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D8EAF7] text-xs font-bold text-[#2D4270]">
+        <div className="border-t border-line p-3">
+          <button onClick={() => setSection("profile")} className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left hover:bg-surface transition-colors">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary-hi">
               {initials(patient.name, patient.email)}
             </div>
             <div>
-              <div className="text-sm font-semibold text-white">{shortName(patient.name, patient.email)}</div>
-              <div className="text-[11px] text-white/45">Paciente</div>
+              <div className="text-sm font-semibold text-ink">{shortName(patient.name, patient.email)}</div>
+              <div className="text-[11px] text-muted">Paciente</div>
             </div>
           </button>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-40 flex h-[60px] shrink-0 items-center justify-between border-b border-[#E2E8F0] bg-white px-4 md:px-8">
+        <header className="sticky top-0 z-40 flex h-[60px] shrink-0 items-center justify-between border-b border-line bg-surface px-4 md:px-8">
           <div className="md:hidden"><Logo /></div>
-          <span className="hidden text-sm font-semibold text-[#2D4270] md:block">{SECTION_TITLES[section]}</span>
+          <span className="hidden text-sm font-semibold text-ink md:block">{SECTION_TITLES[section]}</span>
           <div className="flex items-center gap-2">
             <div className="relative flex">
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#8A96A8] hover:border-[#8AACC8] hover:text-[#2D4270]">
+              <button className="flex h-11 w-11 items-center justify-center rounded-md border border-line text-muted hover:border-primary hover:text-ink transition-colors">
                 <BellIcon />
               </button>
-              {pendingCount > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full border-2 border-white bg-[#C0392B]" />}
+              {pendingCount > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full border-2 border-white bg-danger" />}
             </div>
             <button
               onClick={() => setShowBooking(true)}
               disabled={!psychologist}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#2D4270] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1F3060] disabled:bg-[#E2E8F0] disabled:text-[#8A96A8]"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted"
             >
               <PlusIcon /> Nuevo turno
             </button>
           </div>
         </header>
 
-        <div className="flex gap-2 overflow-x-auto border-b border-[#E2E8F0] bg-white px-4 py-2 md:hidden">
+        <div className="flex gap-2 overflow-x-auto border-b border-line bg-surface px-4 py-2 md:hidden">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setSection(item.id)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${section === item.id ? "bg-[#2D4270] text-white" : "bg-[#F4F6FA] text-[#8A96A8]"}`}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${section === item.id ? "bg-primary text-white" : "bg-bg text-muted"}`}
             >
               {item.label}
             </button>
@@ -378,75 +398,78 @@ export default function PatientDashboard({ patient }: Props) {
           {section === "home" && (
             <>
               {upcoming[0] ? (
-                <section className="relative mb-7 overflow-hidden rounded-[18px] bg-gradient-to-br from-[#2D4270] to-[#3A5494] px-6 py-7 text-white md:flex md:items-center md:gap-6">
-                  <div className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-[14px] bg-white/15 text-2xl md:mb-0">📅</div>
+                <section className="relative mb-7 rounded-lg border border-line bg-surface px-6 py-7 md:flex md:items-center md:gap-6">
+                  <div className="relative z-10 mb-4 flex h-14 w-14 items-center justify-center rounded-md bg-primary-soft text-2xl md:mb-0">📅</div>
                   <div className="relative z-10 flex-1">
-                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-white/55">Próxima sesión</div>
-                    <h1 className="font-serif text-2xl">{upcoming[0].dayName} {upcoming[0].day} de {upcoming[0].month} · {upcoming[0].time}</h1>
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-white/70">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Próxima sesión</div>
+                    <h1 className="font-display text-2xl font-semibold text-ink">{upcoming[0].dayName} {upcoming[0].day} de {upcoming[0].month} · {upcoming[0].time}</h1>
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted">
                       <span>{upcoming[0].professional}</span>
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#7FA98A]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                       <span>Online</span>
-                      {upcoming[0].status === "PENDING" && <span className="font-semibold text-[#FFD580]">Confirmación pendiente</span>}
+                      {upcoming[0].status === "PENDING" && <span className="font-semibold text-pending">Confirmación pendiente</span>}
                     </div>
                   </div>
                   <div className="relative z-10 mt-5 flex gap-2 md:mt-0">
-                    <button className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[#2D4270]"><VideoIcon /> Unirse</button>
-                    {upcoming[0].status === "PENDING" && <button onClick={() => setCancelTarget(upcoming[0])} className="rounded-lg border border-white/35 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10">Cancelar</button>}
+                    {upcoming[0].meetingUrl && (
+                      <a href={upcoming[0].meetingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hi transition-colors"><VideoIcon /> Unirse</a>
+                    )}
+                    <button onClick={() => setRescheduleTarget(upcoming[0])} className="min-h-11 rounded-md border border-line-strong px-4 text-sm font-semibold text-muted hover:border-primary hover:bg-primary-soft hover:text-primary transition-colors">Mover</button>
+                    {upcoming[0].status === "PENDING" && <button onClick={() => setCancelTarget(upcoming[0])} className="min-h-11 rounded-md border border-line-strong px-4 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-ink transition-colors">Cancelar</button>}
                   </div>
                 </section>
               ) : (
-                <section className="mb-7 rounded-[18px] border border-dashed border-[#8AACC8] bg-white p-8 text-center">
-                  <h1 className="font-serif text-2xl text-[#2D4270]">No tenés turnos próximos</h1>
-                  <p className="mt-2 text-sm text-[#8A96A8]">Cuando agendes un turno, aparecerá acá como próxima sesión.</p>
-                  <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="mt-5 rounded-lg bg-[#2D4270] px-5 py-2.5 text-sm font-semibold text-white disabled:bg-[#E2E8F0] disabled:text-[#8A96A8]">Agendar turno</button>
+                <section className="mb-7 rounded-lg border border-dashed border-line-strong bg-surface p-8 text-center">
+                  <h1 className="font-display text-2xl font-semibold text-ink">No tenés turnos próximos</h1>
+                  <p className="mt-2 text-sm text-muted">Cuando agendes un turno, aparecerá acá como próxima sesión.</p>
+                  <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="mt-5 min-h-11 rounded-md bg-primary px-5 text-sm font-semibold text-white disabled:bg-surface-2 disabled:text-muted">Agendar turno</button>
                 </section>
               )}
 
               <section className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard icon="📅" value={String(appointments.length)} label="Turnos totales" detail={`${appointments.length} registrados`} tone="bg-[#EEF2FA]" />
-                <StatCard icon="✓" value={String(confirmedCount)} label="Turnos confirmados" detail="Sesiones aprobadas" tone="bg-[#D0E8D8]" />
-                <StatCard icon="⏳" value={String(pendingCount)} label="Pendientes" detail="Esperando confirmación" tone="bg-[#FEF4E6]" />
-                <StatCard icon="🗓" value={String(upcoming.length)} label="Turnos próximos" detail="Agenda activa" tone="bg-[#D8EAF7]" />
+                <StatCard icon="📅" value={String(appointments.length)} label="Turnos totales" detail={`${appointments.length} registrados`} tone="bg-surface-2" />
+                <StatCard icon="✓" value={String(confirmedCount)} label="Turnos confirmados" detail="Sesiones aprobadas" tone="bg-primary-soft" />
+                <StatCard icon="⏳" value={String(pendingCount)} label="Pendientes" detail="Esperando confirmación" tone="bg-pending-soft" />
+                <StatCard icon="🗓" value={String(upcoming.length)} label="Turnos próximos" detail="Agenda activa" tone="bg-primary-soft" />
               </section>
 
               <section className="grid gap-5 xl:grid-cols-2">
                 <div>
                   <div className="mb-4 flex items-center justify-between">
-                    <h2 className="font-serif text-xl text-[#2D4270]">Próximos turnos</h2>
-                    <button onClick={() => setSection("agenda")} className="text-xs font-semibold text-[#8AACC8] hover:text-[#2D4270]">Ver todos →</button>
+                    <h2 className="font-display text-xl text-ink">Próximos turnos</h2>
+                    <button onClick={() => setSection("agenda")} className="text-xs font-semibold text-primary hover:text-primary-hi">Ver todos →</button>
                   </div>
-                  <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-5">
-                    {loading ? <div className="h-24 rounded-xl bg-[#F4F6FA]" /> : upcoming.length ? upcoming.slice(0, 3).map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="Sin turnos próximos." />}
+                  <div className="rounded-lg border border-line bg-surface p-5">
+                    {loading ? <div className="h-24 rounded-lg bg-bg" /> : upcoming.length ? upcoming.slice(0, 3).map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="Sin turnos próximos." />}
                   </div>
                 </div>
                 <div>
                   <div className="mb-4 flex items-center justify-between">
-                    <h2 className="font-serif text-xl text-[#2D4270]">Mi psicólogo</h2>
-                    {psychologist && <button onClick={handleUnlink} disabled={unlinking} className="text-xs font-semibold text-[#C0392B]">{unlinking ? "..." : "Desvincular"}</button>}
+                    <h2 className="font-display text-xl text-ink">Mi psicólogo</h2>
+                    {psychologist && <button onClick={handleUnlink} disabled={unlinking} className="text-xs font-semibold text-danger">{unlinking ? "…" : "Desvincular"}</button>}
                   </div>
-                  <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-5">
+                  <div className="rounded-lg border border-line bg-surface p-5">
                     {psychologist === undefined ? (
-                      <div className="h-20 rounded-xl bg-[#F4F6FA]" />
+                      <div className="h-20 rounded-lg bg-bg" />
                     ) : psychologist ? (
                       <div className="flex items-center gap-4">
-                        <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[#D8EAF7] text-sm font-semibold text-[#2D4270]">
+                        <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-sm font-semibold text-ink">
                           {psychologist.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={psychologist.image} alt="" className="h-full w-full object-cover" />
                           ) : initials(psychologist.name, psychologist.email)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-[#1C2940]">{psychologist.name || "Sin nombre"}</p>
-                          <p className="truncate text-xs text-[#8A96A8]">{psychologist.email}</p>
-                          <p className="mt-1 text-xs font-semibold text-[#7FA98A]">● Disponible</p>
+                          <p className="font-semibold text-ink">{psychologist.name || "Sin nombre"}</p>
+                          <p className="truncate text-xs text-muted">{psychologist.email}</p>
+                          <p className="mt-1 text-xs font-semibold text-primary">Disponible</p>
                         </div>
-                        <button onClick={() => setSection("profile")} className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-semibold text-[#8A96A8]">Ver</button>
+                        <button onClick={() => setSection("profile")} className="min-h-11 rounded-md border border-line px-3 text-xs font-semibold text-muted hover:bg-surface-2 transition-colors">Ver</button>
                       </div>
                     ) : (
                       <EmptyState
                         label="No tenés un psicólogo vinculado todavía."
-                        action={<button onClick={() => setShowLinkForm(true)} className="rounded-lg bg-[#2D4270] px-4 py-2 text-sm font-semibold text-white">Vincular psicólogo</button>}
+                        action={<button onClick={() => setShowLinkForm(true)} className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white">Vincular psicólogo</button>}
                       />
                     )}
                   </div>
@@ -455,15 +478,40 @@ export default function PatientDashboard({ patient }: Props) {
             </>
           )}
 
+          {section === "browse" && (
+            <>
+              <div className="mb-5">
+                <h1 className="font-display text-xl text-ink">Navegar profesionales</h1>
+                <p className="mt-1 text-sm text-muted">
+                  {psychologist
+                    ? "Mirá la oferta disponible. Para cambiar de profesional, primero desvinculate desde Inicio."
+                    : "Elegí a quién querés como tu profesional de cabecera."}
+                </p>
+              </div>
+              <BrowsePsychologists
+                currentPsychologistId={psychologist?.id ?? null}
+                onLinked={() => {
+                  // Releer del servidor en vez de adivinar el estado local:
+                  // el vínculo lo escribió la API, que es la fuente de verdad.
+                  fetch("/api/patient/psychologist")
+                    .then((res) => res.json())
+                    .then((data) => setPsychologist(data))
+                    .catch(() => {});
+                  setSection("home");
+                }}
+              />
+            </>
+          )}
+
           {section === "agenda" && (
             <>
               <div className="mb-5 flex items-center justify-between">
-                <h1 className="font-serif text-xl text-[#2D4270]">Mis turnos</h1>
-                <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="inline-flex items-center gap-2 rounded-lg bg-[#2D4270] px-4 py-2.5 text-sm font-semibold text-white disabled:bg-[#E2E8F0] disabled:text-[#8A96A8]"><PlusIcon /> Agendar nuevo</button>
+                <h1 className="font-display text-xl text-ink">Mis turnos</h1>
+                <button onClick={() => setShowBooking(true)} disabled={!psychologist} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white disabled:bg-surface-2 disabled:text-muted"><PlusIcon /> Agendar nuevo</button>
               </div>
-              {success && <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{success}</div>}
-              <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-5">
-                {loading ? <div className="h-24 rounded-xl bg-[#F4F6FA]" /> : upcoming.length ? upcoming.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="No tenés turnos próximos." />}
+              {success && <div className="mb-4 rounded-md border border-primary bg-primary-soft px-4 py-3 text-sm font-medium text-primary">{success}</div>}
+              <div className="rounded-lg border border-line bg-surface p-5">
+                {loading ? <div className="h-24 rounded-lg bg-bg" /> : upcoming.length ? upcoming.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} />) : <EmptyState label="No tenés turnos próximos." />}
               </div>
             </>
           )}
@@ -471,11 +519,11 @@ export default function PatientDashboard({ patient }: Props) {
           {section === "history" && (
             <>
               <div className="mb-5 flex items-center justify-between">
-                <h1 className="font-serif text-xl text-[#2D4270]">Historial de sesiones</h1>
+                <h1 className="font-display text-xl text-ink">Historial de sesiones</h1>
               </div>
-              <div className="overflow-hidden rounded-[14px] border border-[#E2E8F0] bg-white">
+              <div className="overflow-hidden rounded-lg border border-line bg-surface">
                 {history.length ? (
-                  <div className="divide-y divide-[#E2E8F0]">
+                  <div className="divide-y divide-line px-5">
                     {history.map((appointment) => <AppointmentItem key={appointment.id} appointment={appointment} onCancel={setCancelTarget} compact />)}
                   </div>
                 ) : <EmptyState label="Todavía no hay historial." />}
@@ -495,41 +543,41 @@ export default function PatientDashboard({ patient }: Props) {
             return (
               <>
                 <div className="mb-5 flex items-center justify-between">
-                  <h1 className="font-serif text-xl text-[#2D4270]">Pagos</h1>
+                  <h1 className="font-display text-xl text-ink">Pagos</h1>
                 </div>
                 <section className="mb-6 grid gap-4 md:grid-cols-3">
-                  <StatCard icon="✓" value={`${currency} ${totalPaid.toLocaleString("es-AR")}`} label="Total pagado" detail={`${paid.length} pago${paid.length !== 1 ? "s" : ""} aprobado${paid.length !== 1 ? "s" : ""}`} tone="bg-[#D0E8D8]" />
-                  <StatCard icon="⏳" value={`${currency} ${totalPending.toLocaleString("es-AR")}`} label="Pendiente" detail={`${pending.length} en proceso`} tone="bg-[#FEF4E6]" />
-                  <StatCard icon="✕" value={String(failed.length)} label="Fallidos" detail={`${failed.length} cobro${failed.length !== 1 ? "s" : ""} fallido${failed.length !== 1 ? "s" : ""}`} tone="bg-[#FDF0EE]" />
+                  <StatCard icon="✓" value={`${currency} ${totalPaid.toLocaleString("es-AR")}`} label="Total pagado" detail={`${paid.length} pago${paid.length !== 1 ? "s" : ""} aprobado${paid.length !== 1 ? "s" : ""}`} tone="bg-primary-soft" />
+                  <StatCard icon="⏳" value={`${currency} ${totalPending.toLocaleString("es-AR")}`} label="Pendiente" detail={`${pending.length} en proceso`} tone="bg-pending-soft" />
+                  <StatCard icon="✕" value={String(failed.length)} label="Fallidos" detail={`${failed.length} cobro${failed.length !== 1 ? "s" : ""} fallido${failed.length !== 1 ? "s" : ""}`} tone="bg-danger-soft" />
                 </section>
-                <div className="rounded-[14px] border border-[#E2E8F0] bg-white divide-y divide-[#E2E8F0]">
+                <div className="rounded-lg border border-line bg-surface divide-y divide-line">
                   {withPayment.length === 0 ? (
                     <EmptyState label="No hay pagos registrados todavía." />
                   ) : withPayment.map((a) => {
                     const d = new Date(a.date);
                     const psLabel = a.psychologist.name || a.psychologist.email;
                     const psMap: Record<string, { label: string; className: string }> = {
-                      approved: { label: "Pagado", className: "bg-[#D0E8D8] text-[#557C5F]" },
-                      pending: { label: "Pendiente", className: "bg-[#FEF4E6] text-[#C07A20]" },
-                      rejected: { label: "Rechazado", className: "bg-[#FDF0EE] text-[#C0392B]" },
-                      cancelled: { label: "Cancelado", className: "bg-[#FDF0EE] text-[#C0392B]" },
+                      approved: { label: "Pagado", className: "bg-primary-soft text-primary-hi" },
+                      pending: { label: "Pendiente", className: "bg-pending-soft text-pending" },
+                      rejected: { label: "Rechazado", className: "bg-danger-soft text-danger" },
+                      cancelled: { label: "Cancelado", className: "bg-danger-soft text-danger" },
                     };
-                    const ps = a.paymentStatus ? (psMap[a.paymentStatus] ?? { label: a.paymentStatus, className: "bg-gray-100 text-gray-600" }) : { label: "Sin pagar", className: "bg-gray-100 text-gray-500" };
+                    const ps = a.paymentStatus ? (psMap[a.paymentStatus] ?? { label: a.paymentStatus, className: "bg-surface-2 text-muted" }) : { label: "Sin pagar", className: "bg-surface-2 text-muted" };
                     return (
                       <div key={a.id} className="flex items-center gap-4 px-5 py-4">
-                        <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-[10px] bg-[#EEF2FA]">
-                          <div className="font-serif text-[22px] leading-none text-[#2D4270]">{d.getDate()}</div>
-                          <div className="text-[9px] font-semibold uppercase tracking-wide text-[#8A96A8]">{d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "")}</div>
+                        <div className="flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-md bg-surface-2">
+                          <div className="font-display text-[22px] leading-none text-ink">{d.getDate()}</div>
+                          <div className="text-[9px] font-semibold uppercase tracking-wide text-muted">{d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "")}</div>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-[#1C2940]">{psLabel}</div>
-                          <div className="mt-0.5 text-xs text-[#8A96A8]">{d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" })}</div>
+                          <div className="text-sm font-semibold text-ink">{psLabel}</div>
+                          <div className="mt-0.5 text-xs text-muted">{d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" })}</div>
                           <span className={`mt-1.5 inline-block rounded-full px-2.5 py-1 text-[10px] font-semibold ${ps.className}`}>{ps.label}</span>
                         </div>
                         <div className="text-right">
-                          <div className="font-semibold text-[#2D4270] text-sm">{a.currency} {a.amount?.toLocaleString("es-AR")}</div>
+                          <div className="font-semibold text-ink text-sm">{a.currency} {a.amount?.toLocaleString("es-AR")}</div>
                           {a.preferenceId && !a.paymentStatus && (
-                            <a href={`https://www.mercadopago.com.ar/checkout/v1/redirect?preference-id=${a.preferenceId}`} target="_blank" rel="noopener noreferrer" className="mt-1 block text-[10px] font-semibold text-[#8AACC8] hover:text-[#2D4270]">
+                            <a href={`https://www.mercadopago.com.ar/checkout/v1/redirect?preference-id=${a.preferenceId}`} target="_blank" rel="noopener noreferrer" className="mt-1 block text-[10px] font-semibold text-primary hover:text-primary-hi">
                               Pagar →
                             </a>
                           )}
@@ -545,51 +593,51 @@ export default function PatientDashboard({ patient }: Props) {
           {section === "profile" && (
             <>
               <div className="mb-5 flex items-center justify-between">
-                <h1 className="font-serif text-xl text-[#2D4270]">Mi perfil</h1>
+                <h1 className="font-display text-xl text-ink">Mi perfil</h1>
               </div>
               <div className="grid gap-5 xl:grid-cols-2">
-                <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-6">
-                  <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-gradient-to-br from-[#D8EAF7] to-[#D0E8D8] font-serif text-3xl text-[#2D4270]">
+                <div className="rounded-lg border border-line bg-surface p-6">
+                  <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary-soft font-display text-3xl text-primary">
                     {initials(patient.name, patient.email)}
                   </div>
-                  <div className="font-serif text-xl text-[#2D4270]">{patient.name || "Paciente"}</div>
-                  <div className="mb-5 text-xs text-[#8A96A8]">{patient.email}</div>
-                  <div className="h-px bg-[#E2E8F0]" />
+                  <div className="font-display text-xl text-ink">{patient.name || "Paciente"}</div>
+                  <div className="mb-5 text-xs text-muted">{patient.email}</div>
+                  <div className="h-px bg-surface-2" />
                   <div className="mt-5 space-y-4">
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8A96A8]">Email</p>
-                      <p className="text-sm text-[#1C2940]">{patient.email}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">Email</p>
+                      <p className="text-sm text-ink">{patient.email}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8A96A8]">Rol</p>
-                      <p className="text-sm text-[#1C2940]">Paciente</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">Rol</p>
+                      <p className="text-sm text-ink">Paciente</p>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-5">
-                  <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-5">
-                    <h2 className="mb-3 font-serif text-lg text-[#2D4270]">Mi psicólogo</h2>
+                  <div className="rounded-lg border border-line bg-surface p-5">
+                    <h2 className="mb-3 font-display text-lg text-ink">Mi psicólogo</h2>
                     {psychologist ? (
                       <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#D8EAF7] text-sm font-semibold text-[#2D4270]">{initials(psychologist.name, psychologist.email)}</div>
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">{initials(psychologist.name, psychologist.email)}</div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-[#1C2940]">{psychologist.name || "Sin nombre"}</p>
-                          <p className="truncate text-xs text-[#8A96A8]">{psychologist.email}</p>
+                          <p className="font-semibold text-ink">{psychologist.name || "Sin nombre"}</p>
+                          <p className="truncate text-xs text-muted">{psychologist.email}</p>
                         </div>
-                        <button onClick={handleUnlink} disabled={unlinking} className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-semibold text-[#C0392B]">{unlinking ? "..." : "Desvincular"}</button>
+                        <button onClick={handleUnlink} disabled={unlinking} className="min-h-11 rounded-md border border-line px-3 text-xs font-semibold text-danger hover:bg-danger-soft transition-colors">{unlinking ? "…" : "Desvincular"}</button>
                       </div>
                     ) : (
                       <form onSubmit={handleLink} className="space-y-3">
-                        <input value={linkEmail} onChange={(e) => { setLinkEmail(e.target.value); setLinkError(""); }} type="email" required placeholder="email del psicólogo" className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#8AACC8]" />
-                        {linkError && <p className="text-sm text-[#C0392B]">{linkError}</p>}
-                        <button disabled={linking} className="rounded-lg bg-[#2D4270] px-4 py-2 text-sm font-semibold text-white">{linking ? "Buscando..." : "Vincular"}</button>
+                        <input value={linkEmail} onChange={(e) => { setLinkEmail(e.target.value); setLinkError(""); }} type="email" required placeholder="email del psicólogo" className="min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft" />
+                        {linkError && <p className="text-sm text-danger">{linkError}</p>}
+                        <button disabled={linking} className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-white">{linking ? "Buscando…" : "Vincular"}</button>
                       </form>
                     )}
                   </div>
                   <ReviewsPanel canReview={!!psychologist} title="Calificaciones" />
-                  <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-5">
-                    <h2 className="mb-3 font-serif text-lg text-[#2D4270]">Seguridad</h2>
-                    <button onClick={() => signOut({ callbackUrl: "/login" })} className="rounded-lg bg-[#FDF0EE] px-4 py-2 text-sm font-semibold text-[#C0392B]">Cerrar sesión</button>
+                  <div className="rounded-lg border border-line bg-surface p-5">
+                    <h2 className="mb-3 font-display text-lg text-ink">Seguridad</h2>
+                    <button onClick={() => signOut({ callbackUrl: "/login" })} className="min-h-11 rounded-md bg-danger-soft px-4 text-sm font-semibold text-danger">Cerrar sesión</button>
                   </div>
                 </div>
               </div>
@@ -599,45 +647,58 @@ export default function PatientDashboard({ patient }: Props) {
       </div>
 
       {showLinkForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1C2940]/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[18px] border border-[#E2E8F0] bg-white p-6 shadow-2xl">
-            <h2 className="font-serif text-xl text-[#2D4270]">Vincular psicólogo</h2>
-            <p className="mt-1 text-sm text-[#8A96A8]">Ingresá el email del profesional registrado.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-lg border border-line bg-surface p-6 shadow-2xl">
+            <h2 className="font-display text-xl font-semibold text-ink">Vincular psicólogo</h2>
+            <p className="mt-1 text-sm text-muted">Ingresá el email del profesional registrado.</p>
             <form onSubmit={handleLink} className="mt-5 space-y-3">
-              <input value={linkEmail} onChange={(e) => { setLinkEmail(e.target.value); setLinkError(""); }} type="email" required placeholder="psicologo@email.com" className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#8AACC8]" />
-              {linkError && <p className="text-sm text-[#C0392B]">{linkError}</p>}
+              <input value={linkEmail} onChange={(e) => { setLinkEmail(e.target.value); setLinkError(""); }} type="email" required placeholder="psicologo@email.com" className="min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft" />
+              {linkError && <p className="text-sm text-danger">{linkError}</p>}
               <div className="flex gap-2">
-                <button type="button" onClick={() => setShowLinkForm(false)} className="flex-1 rounded-lg border border-[#E2E8F0] px-4 py-2 text-sm font-semibold text-[#8A96A8]">Cancelar</button>
-                <button disabled={linking} className="flex-1 rounded-lg bg-[#2D4270] px-4 py-2 text-sm font-semibold text-white">{linking ? "Buscando..." : "Vincular"}</button>
+                <button type="button" onClick={() => setShowLinkForm(false)} className="min-h-11 flex-1 rounded-md border border-line px-4 text-sm font-semibold text-muted">Cancelar</button>
+                <button disabled={linking} className="min-h-11 flex-1 rounded-md bg-primary px-4 text-sm font-semibold text-white">{linking ? "Buscando…" : "Vincular"}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
+      {rescheduleTarget && (
+        <RescheduleModal
+          appointmentId={rescheduleTarget.id}
+          psychologistId={rescheduleTarget.psychologist.id}
+          currentDate={rescheduleTarget.date}
+          onClose={() => setRescheduleTarget(null)}
+          onDone={() => {
+            setSuccess("Turno movido. Tu psicólogo lo va a confirmar.");
+            fetchAppointments();
+          }}
+        />
+      )}
+
       {cancelTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1C2940]/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[18px] border border-[#E2E8F0] bg-white p-7 shadow-2xl">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#FEF4E6] text-xl">⚠</div>
-            <h2 className="text-center font-serif text-xl text-[#2D4270]">Cancelar turno</h2>
-            <p className="mt-2 text-center text-sm leading-6 text-[#8A96A8]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg border border-line bg-surface p-7 shadow-2xl">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-pending-soft text-xl">⚠</div>
+            <h2 className="text-center font-display text-xl font-semibold text-ink">Cancelar turno</h2>
+            <p className="mt-2 text-center text-sm leading-6 text-muted">
               ¿Querés cancelar la sesión del <strong>{cancelTarget.dayName} {cancelTarget.day} de {cancelTarget.month}</strong> a las <strong>{cancelTarget.time.split(" ")[0]}</strong>?
             </p>
             <div className="mt-5 flex gap-2">
-              <button onClick={() => setCancelTarget(null)} className="flex-1 rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm font-semibold text-[#8A96A8]">Mantener turno</button>
-              <button onClick={confirmCancel} className="flex-1 rounded-lg bg-[#FDF0EE] px-4 py-2.5 text-sm font-semibold text-[#C0392B]">Sí, cancelar</button>
+              <button onClick={() => setCancelTarget(null)} className="min-h-11 flex-1 rounded-md border border-line px-4 text-sm font-semibold text-muted">Mantener turno</button>
+              <button onClick={confirmCancel} className="min-h-11 flex-1 rounded-md bg-danger-soft px-4 text-sm font-semibold text-danger">Sí, cancelar</button>
             </div>
           </div>
         </div>
       )}
 
       {cancelledMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1C2940]/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[18px] border border-[#E2E8F0] bg-white p-7 text-center shadow-2xl">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#D0E8D8] text-xl">✓</div>
-            <h2 className="font-serif text-xl text-[#2D4270]">Turno cancelado</h2>
-            <p className="mt-2 text-sm text-[#8A96A8]">Tu turno fue cancelado correctamente.</p>
-            <button onClick={() => setCancelledMessage(false)} className="mt-5 w-full rounded-lg bg-[#2D4270] px-4 py-2.5 text-sm font-semibold text-white">Entendido</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg border border-line bg-surface p-7 text-center shadow-2xl">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-xl">✓</div>
+            <h2 className="font-display text-xl font-semibold text-ink">Turno cancelado</h2>
+            <p className="mt-2 text-sm text-muted">Tu turno fue cancelado correctamente.</p>
+            <button onClick={() => setCancelledMessage(false)} className="mt-5 min-h-11 w-full rounded-md bg-primary px-4 text-sm font-semibold text-white">Entendido</button>
           </div>
         </div>
       )}

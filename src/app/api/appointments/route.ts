@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { MercadoPagoConfig, Preference } from "mercadopago";
+import { findConflictingAppointment, isWithinAvailability } from "@/lib/appointment-rules";
+import { notifyNewAppointment } from "@/lib/notifications";
 
 export async function GET() {
   const session = await auth();
@@ -61,19 +64,35 @@ export async function POST(req: NextRequest) {
 
   // Conflict check
   const appointmentDate = new Date(date);
+  if (Number.isNaN(appointmentDate.getTime())) {
+    return NextResponse.json({ error: "La fecha es inválida" }, { status: 400 });
+  }
   const durationMin = duration ?? psychologist.psychologistProfile?.sessionDuration ?? 50;
-  const endDate = new Date(appointmentDate.getTime() + durationMin * 60 * 1000);
 
-  const conflict = await prisma.appointment.findFirst({
-    where: {
-      psychologistId: resolvedPsychologistId,
-      status: { not: "CANCELLED" },
-      AND: [
-        { date: { lt: endDate } },
-        { date: { gte: new Date(appointmentDate.getTime() - durationMin * 60 * 1000) } },
-      ],
-    },
-  });
+  // El profesional puede cargarse turnos fuera de su horario publicado; el
+  // resto no.
+  const isOwner = !!session && session.user.id === resolvedPsychologistId;
+  if (!isOwner) {
+    const dentro = await isWithinAvailability(
+      resolvedPsychologistId,
+      appointmentDate,
+      durationMin,
+      psychologist.psychologistProfile?.timezone
+    );
+
+    if (!dentro) {
+      return NextResponse.json(
+        { error: "Ese horario está fuera de la agenda del profesional" },
+        { status: 409 }
+      );
+    }
+  }
+
+  const conflict = await findConflictingAppointment(
+    resolvedPsychologistId,
+    appointmentDate,
+    durationMin
+  );
 
   if (conflict) {
     return NextResponse.json({ error: "El horario no está disponible" }, { status: 409 });
@@ -97,6 +116,8 @@ export async function POST(req: NextRequest) {
   const currency = psychologist.psychologistProfile?.currency ?? "ARS";
 
   if (!fee || !process.env.MP_ACCESS_TOKEN) {
+    // Sin pago de por medio el turno ya está pedido: se avisa acá.
+    after(() => notifyNewAppointment(appointment.id));
     return NextResponse.json({ appointment }, { status: 201 });
   }
 
@@ -135,6 +156,10 @@ export async function POST(req: NextRequest) {
       where: { id: appointment.id },
       data: { preferenceId: preference.id, amount: fee, currency },
     });
+
+    // Recién acá el turno quedó firme: si la preferencia de pago falla, el
+    // turno se borra y nadie tiene que recibir un aviso de algo que no existe.
+    after(() => notifyNewAppointment(appointment.id));
 
     return NextResponse.json(
       { appointment, checkoutUrl: preference.init_point, sandboxUrl: preference.sandbox_init_point },

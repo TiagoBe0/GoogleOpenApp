@@ -15,6 +15,10 @@ model User {
   image         String?
   password      String?
   role          String    @default("PATIENT")
+  // Distingue "eligió su rol" de "quedó con el valor por defecto". Google no
+  // puede preguntarlo durante el login, así que quien entra por ahí llega con
+  // false y la pantalla de bienvenida se lo pregunta una sola vez.
+  roleChosen    Boolean   @default(false)
   psychologistId String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -28,6 +32,50 @@ model User {
   reviewsGiven             Review[]      @relation("PatientReviews")
   reviewsReceived          Review[]      @relation("PsychologistReviews")
   psychologistProfile      PsychologistProfile?
+  availability             AvailabilityRule[]
+  pushSubscriptions        PushSubscription[]
+}
+
+/// Navegador registrado para recibir avisos push. Una persona puede tener
+/// varios: el teléfono y la computadora del consultorio son suscripciones
+/// distintas, y hay que avisarle en las dos.
+model PushSubscription {
+  id     String @id @default(cuid())
+  userId String
+  /// URL que da el navegador para empujarle el aviso. Es el identificador real
+  /// de la suscripción: si el navegador la renueva, cambia.
+  endpoint String @unique
+  /// Claves de cifrado del navegador. El contenido del aviso viaja cifrado
+  /// extremo a extremo, así que el servicio de push (Google, Mozilla) no puede
+  /// leer de qué turno se trata.
+  p256dh String
+  auth   String
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Franja semanal recurrente en la que el profesional atiende. Un día puede
+/// tener varias (mañana y tarde), y los minutos son locales a la zona horaria
+/// del perfil, no UTC: la agenda de alguien que atiende "de 14 a 19" no se
+/// corre cuando cambia el horario de verano.
+model AvailabilityRule {
+  id             String   @id @default(cuid())
+  psychologistId String
+  /// 0 = domingo ... 6 = sábado, igual que Date.getDay().
+  weekday        Int
+  /// Minutos desde la medianoche local. 480 = 08:00.
+  startMinute    Int
+  endMinute      Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  psychologist User @relation(fields: [psychologistId], references: [id], onDelete: Cascade)
+
+  @@index([psychologistId])
 }
 
 model Appointment {
@@ -38,7 +86,14 @@ model Appointment {
   duration        Int      @default(60)
   notes           String?
   status          String   @default("PENDING")
+  /// Link de la videollamada, que carga el profesional al confirmar. Solo
+  /// https: se guarda validado en src/lib/meeting-link.ts, porque termina
+  /// renderizado como enlace en la pantalla del paciente.
+  meetingUrl      String?
   calendarEventId String?
+  /// Sube con cada reprogramación. Va en el .ics: sin un número mayor que el
+  /// anterior, el cliente de calendario descarta la actualización por vieja.
+  calendarSequence Int     @default(0)
   // anonymous patient fields (public booking via /p/[slug])
   patientName     String?
   patientEmail    String?
@@ -70,6 +125,23 @@ model PsychologistProfile {
   instagramUrl    String?
   linkedinUrl     String?
   websiteUrl      String?
+
+  // Datos de contacto y consultorio. El formulario de perfil ya los pedía
+  // desde el principio, pero no existían acá: se completaban, decía "guardado
+  // correctamente" y se perdían al recargar.
+  phone              String?
+  address            String?
+  city               String?
+  country            String?
+  yearsOfExperience  Int?
+  /// Idiomas separados por coma, tal como los escribe el profesional.
+  languages          String?
+  modalityOnline     Boolean @default(false)
+  modalityPresential Boolean @default(true)
+  /// En false el perfil sale del directorio público, pero su link directo
+  /// sigue funcionando: sirve para quien tiene la agenda llena.
+  acceptsNewPatients Boolean @default(true)
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

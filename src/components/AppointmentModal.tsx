@@ -15,6 +15,9 @@ const DURATIONS = [
   { label: "1:30 hs", value: 90 },
 ];
 
+const inputCls =
+  "min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-base text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary-soft";
+
 function toLocalDateTimeInput(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -65,22 +68,19 @@ export default function AppointmentModal({ initialDate, onClose, onCreated }: Pr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-surface rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-line">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h2 className="font-semibold text-gray-900">Nuevo turno</h2>
+        <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-line">
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-ink">Nuevo turno</h2>
+            <p className="mt-1 text-sm text-muted">Creá un evento en tu calendario.</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Cerrar"
+            className="flex h-11 w-11 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-2 hover:text-ink"
           >
-            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -89,40 +89,40 @@ export default function AppointmentModal({ initialDate, onClose, onCreated }: Pr
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre del paciente</label>
+            <label className="block text-sm font-semibold text-ink mb-1.5">Nombre del paciente</label>
             <input
               type="text"
               required
               placeholder="Ej: María González"
               value={form.patientName}
               onChange={(e) => setForm((p) => ({ ...p, patientName: e.target.value }))}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className={inputCls}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha y hora</label>
+            <label className="block text-sm font-semibold text-ink mb-1.5">Fecha y hora</label>
             <input
               type="datetime-local"
               required
               value={form.startDateTime}
               onChange={(e) => setForm((p) => ({ ...p, startDateTime: e.target.value }))}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className={inputCls}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Duración</label>
+            <label className="block text-sm font-semibold text-ink mb-1.5">Duración</label>
             <div className="grid grid-cols-4 gap-2">
               {DURATIONS.map((d) => (
                 <button
                   key={d.value}
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, duration: d.value }))}
-                  className={`py-2 rounded-lg text-sm font-medium border transition-all ${
+                  className={`min-h-11 rounded-md text-sm font-semibold border transition-colors ${
                     form.duration === d.value
-                      ? "bg-indigo-600 text-white border-indigo-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+                      ? "bg-primary text-white border-primary"
+                      : "bg-surface text-muted border-line-strong hover:border-primary hover:bg-primary-soft hover:text-primary"
                   }`}
                 >
                   {d.label}
@@ -132,20 +132,20 @@ export default function AppointmentModal({ initialDate, onClose, onCreated }: Pr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Notas <span className="text-gray-400 font-normal">(opcional)</span>
+            <label className="block text-sm font-semibold text-ink mb-1.5">
+              Notas <span className="text-muted font-normal">(opcional)</span>
             </label>
             <textarea
               rows={2}
               placeholder="Motivo de consulta, recordatorios..."
               value={form.notes}
               onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              className={inputCls + " resize-none"}
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600">
+            <div className="bg-danger-soft border border-danger rounded-md px-3 py-2 text-sm font-medium text-danger">
               {error}
             </div>
           )}
@@ -154,16 +154,16 @@ export default function AppointmentModal({ initialDate, onClose, onCreated }: Pr
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              className="min-h-11 flex-1 rounded-md border border-line-strong text-base font-semibold text-ink transition-colors hover:bg-surface-2"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium transition-colors"
+              className="min-h-11 flex-1 rounded-md bg-primary text-base font-semibold text-white transition-colors hover:bg-primary-hi disabled:bg-surface-2 disabled:text-muted"
             >
-              {loading ? "Guardando..." : "Guardar turno"}
+              {loading ? "Guardando…" : "Guardar turno"}
             </button>
           </div>
         </form>

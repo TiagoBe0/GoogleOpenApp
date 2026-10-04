@@ -9,7 +9,7 @@
  * AUTH_URL es el nombre que usa Auth.js v5; NEXTAUTH_URL queda como respaldo
  * para los .env que ya existen.
  */
-export function appUrl(env: NodeJS.ProcessEnv = process.env): string {
+export function appUrl(env: Record<string, string | undefined> = process.env): string {
   const url = env.AUTH_URL || env.NEXTAUTH_URL || "http://localhost:3000";
   return url.trim().replace(/\/+$/, "");
 }

@@ -37,8 +37,10 @@ npx prisma studio        # explorar la base SQLite en el navegador
   necesita testear, proponer setup (Vitest o Playwright) antes de asumir uno.
 - **Comando de lint/typecheck:** `npm run lint`. Para chequeo de tipos:
   `npx tsc --noEmit`.
-- **Deploy:** ver [docs/deploy/ibm-almalinux-ngrok.md](docs/deploy/ibm-almalinux-ngrok.md)
-  (IBM AlmaLinux + ngrok).
+- **Deploy:** ver [docs/deploy/malbecmotion.md](docs/deploy/malbecmotion.md)
+  (malbecmotion.com con Cloudflare Tunnel; `bash deploy/setup.sh` instala o
+  actualiza). La guía vieja con ngrok queda en
+  [docs/deploy/ibm-almalinux-ngrok.md](docs/deploy/ibm-almalinux-ngrok.md).
 
 ## Variables de entorno
 

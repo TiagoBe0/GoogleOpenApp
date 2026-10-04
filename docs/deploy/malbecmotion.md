@@ -23,10 +23,42 @@ Archivos de referencia en el repo:
 
 - `deploy/cloudflared-config.yml` — configuración del túnel (camino A).
 - `deploy/Caddyfile` — proxy HTTPS para `malbecmotion.com` y redirección de `www` (camino B).
-- `deploy/psicolink.service` — servicio systemd de la app.
+- `deploy/setup.sh` — instala o actualiza la app en el servidor.
+- `deploy/psicolink.service` — servicio systemd de la app (lo instala `setup.sh`).
+- `scripts/check-env.mjs` — verifica el `.env.production` sin mostrar valores.
 - `.env.example` — todas las variables, con los valores de producción comentados.
 
 ---
+
+## 0. Antes de prender el servidor (se hace desde cualquier compu)
+
+Todo esto se puede dejar listo hoy. Lo que más tarda es lo primero, así que
+conviene empezar por ahí:
+
+1. **Pasar el dominio a Cloudflare** (paso 6A, punto *a*). Cambiar los
+   nameservers puede tardar horas en propagar, y mientras tanto el servidor no
+   hace falta.
+2. **Google Cloud Console** (paso 7): cargar las URLs de `malbecmotion.com`.
+3. **MercadoPago** (paso 8): sacar las credenciales de producción y cargar la
+   URL del webhook. La clave secreta del webhook la da el panel al guardar la
+   URL.
+4. **Correo** (paso 9, opcional): si se usa Resend u otro proveedor, verificar
+   el dominio. Los registros que pide se cargan en el DNS de Cloudflare.
+5. **Armar el `.env.production`** en la compu (paso 4) y verificarlo:
+
+   ```bash
+   openssl rand -base64 32              # → AUTH_SECRET
+   npx web-push generate-vapid-keys     # → VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY
+   node scripts/check-env.mjs .env.production
+   ```
+
+   `check-env` no imprime ningún valor: solo dice qué falta o qué quedó mal
+   (URL sin https, credenciales TEST de MercadoPago, webhook sin clave, etc.).
+   Después se pasa al servidor con `scp`, **nunca por git**.
+
+Con eso, el día del servidor queda: paso 3, `bash deploy/setup.sh` (paso 5) y
+el túnel (paso 6A, puntos *b* a *d*).
+
 
 ## 1. DNS (solo camino B)
 
@@ -108,20 +140,44 @@ Va **sin barra final** y **con https**.
 
 `.env.production` está en `.gitignore`: nunca se sube al repo.
 
+Antes de seguir, verificarlo:
+
+```bash
+node scripts/check-env.mjs .env.production
+```
+
 ## 5. Compilar y levantar la app
 
 ```bash
-npm ci
-npx prisma generate
-npx prisma migrate deploy
-npm run build
-
-sudo cp deploy/psicolink.service /etc/systemd/system/psicolink.service
-sudo nano /etc/systemd/system/psicolink.service   # poner tu usuario en User=
-sudo systemctl daemon-reload
-sudo systemctl enable --now psicolink
-curl -I http://127.0.0.1:3000
+bash deploy/setup.sh
 ```
+
+El script verifica la versión de Node y el `.env.production`, instala
+dependencias, hace una copia de la base si ya existe, aplica las migraciones,
+compila, instala el servicio systemd con tu usuario y la carpeta actual, y
+comprueba que la app responda en `127.0.0.1:3000`. Si algo falla, se detiene y
+dice qué.
+
+Se puede volver a correr cuando haga falta: es también el comando para
+actualizar (paso 11).
+
+> Ojo si se hace a mano: `npx prisma migrate deploy` lee solo `.env`, no
+> `.env.production`. Hay que pasarle `DATABASE_URL` (el script ya lo hace).
+
+### Si el servidor ya tiene datos reales
+
+La instalación vieja (con ngrok) estaba en `/var/www/miterapia`, con su base en
+`prisma/prod.db`. Si ahí hay usuarios o turnos que importan, **antes** de correr
+el script copiar esa base a la carpeta nueva:
+
+```bash
+cp /var/www/miterapia/prisma/prod.db /var/www/psicolink/prisma/prod.db
+```
+
+Las ramas `ibm` y `main1` tenían migraciones propias que esta rama no tiene; si
+la base vieja se creó desde una de ellas, `migrate deploy` puede negarse a
+aplicar. En ese caso no forzar nada: guardar el error y revisarlo antes de
+seguir. Si la base vieja era solo de prueba, arrancar con una nueva.
 
 Si venías usando el servicio `miterapia` + ngrok, apagarlos para que no compitan
 por el puerto:
@@ -257,11 +313,7 @@ Con Gmail SMTP el remitente queda siendo la cuenta de Gmail, no el dominio.
 ```bash
 cd /var/www/psicolink
 git pull
-npm ci
-npx prisma generate
-npx prisma migrate deploy
-npm run build
-sudo systemctl restart psicolink
+bash deploy/setup.sh
 ```
 
 ## Backup de la base

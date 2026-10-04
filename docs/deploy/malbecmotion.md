@@ -1,9 +1,19 @@
 # Publicar PsicoLink en malbecmotion.com
 
 Esta guía reemplaza a ngrok por el dominio propio. La app sigue corriendo igual
-(`next start` en el puerto 3000, base SQLite en el disco); lo que cambia es que
-delante se pone **Caddy**, que atiende `https://malbecmotion.com` y saca solo
-el certificado HTTPS.
+(`next start` en el puerto 3000, base SQLite en el disco); lo que cambia es qué
+se pone delante para atender `https://malbecmotion.com`:
+
+- **Camino A — Cloudflare Tunnel (recomendado para este servidor).** El servidor
+  tiene IP privada (`192.168.220.66`), así que no se lo puede alcanzar
+  directamente desde internet. El túnel sale desde el servidor hacia Cloudflare,
+  como hacía ngrok: no hay que abrir puertos en el router y funciona aunque el
+  proveedor use CGNAT o la IP pública cambie. Pasos: 3, 4, 5, **6A**, 7–11.
+- **Camino B — Caddy + redirección de puertos.** Solo si el router reenvía 80 y
+  443 a `192.168.220.66` y la IP pública es fija y no compartida (sin CGNAT).
+  Pasos: 1, 2, 3, 4, 5, **6B**, 7–11.
+
+Para saber qué IP pública ve internet, en el servidor: `curl -4 ifconfig.me`.
 
 > **Por qué un servidor y no Vercel:** la base es SQLite (`DATABASE_URL="file:..."`).
 > En una plataforma serverless el disco no persiste entre despliegues, así que
@@ -11,13 +21,14 @@ el certificado HTTPS.
 
 Archivos de referencia en el repo:
 
-- `deploy/Caddyfile` — proxy HTTPS para `malbecmotion.com` y redirección de `www`.
+- `deploy/cloudflared-config.yml` — configuración del túnel (camino A).
+- `deploy/Caddyfile` — proxy HTTPS para `malbecmotion.com` y redirección de `www` (camino B).
 - `deploy/psicolink.service` — servicio systemd de la app.
 - `.env.example` — todas las variables, con los valores de producción comentados.
 
 ---
 
-## 1. DNS (en el panel donde compraste el dominio)
+## 1. DNS (solo camino B)
 
 El servidor necesita una **IP pública** y los puertos **80 y 443** abiertos.
 
@@ -35,14 +46,9 @@ dig +short malbecmotion.com
 dig +short www.malbecmotion.com
 ```
 
-> **Si el servidor NO tiene IP pública** (está detrás de un router/NAT, que es
-> el caso típico cuando se usaba ngrok): en lugar de Caddy usar
-> **Cloudflare Tunnel**. Se pasan los nameservers del dominio a Cloudflare, se
-> instala `cloudflared` y se crea un túnel que apunte a `http://localhost:3000`
-> para `malbecmotion.com`. El resto de esta guía (variables, Google,
-> MercadoPago) es igual.
+En el camino A los registros DNS los crea `cloudflared` (paso 6A).
 
-## 2. Firewall (AlmaLinux)
+## 2. Firewall (solo camino B)
 
 ```bash
 sudo firewall-cmd --permanent --add-service=http
@@ -124,7 +130,60 @@ por el puerto:
 sudo systemctl disable --now miterapia ngrok
 ```
 
-## 6. Caddy (HTTPS)
+## 6A. Cloudflare Tunnel
+
+**a) Pasar el dominio a Cloudflare.** Crear una cuenta gratis en Cloudflare,
+"Add a site" → `malbecmotion.com`, plan Free. Cloudflare indica dos
+*nameservers*: cargarlos en el panel donde compraste el dominio (si es `.com`,
+el registrador; reemplazan a los que haya). La propagación puede tardar desde
+minutos hasta un día; Cloudflare avisa por mail cuando el dominio queda activo.
+
+**b) Instalar `cloudflared` en el servidor.**
+
+```bash
+curl -fsSL https://pkg.cloudflare.com/cloudflared.repo | sudo tee /etc/yum.repos.d/cloudflared.repo
+sudo dnf install -y cloudflared
+cloudflared --version
+```
+
+(Si el repo cambió, seguir la instalación para RHEL de la documentación oficial
+de Cloudflare.)
+
+**c) Crear el túnel y los registros DNS.**
+
+```bash
+cloudflared tunnel login                 # abre un link: autorizar malbecmotion.com
+cloudflared tunnel create psicolink      # imprime el TUNNEL_ID y crea ~/.cloudflared/<ID>.json
+cloudflared tunnel route dns psicolink malbecmotion.com
+cloudflared tunnel route dns psicolink www.malbecmotion.com
+```
+
+**d) Configurar y dejarlo como servicio.**
+
+```bash
+sudo mkdir -p /etc/cloudflared
+sudo cp ~/.cloudflared/<TUNNEL_ID>.json /etc/cloudflared/
+sudo cp deploy/cloudflared-config.yml /etc/cloudflared/config.yml
+sudo nano /etc/cloudflared/config.yml    # reemplazar TUNNEL_ID (2 lugares)
+
+cloudflared tunnel --config /etc/cloudflared/config.yml ingress validate
+sudo cloudflared service install
+sudo systemctl enable --now cloudflared
+journalctl -u cloudflared -f
+```
+
+**e) HTTPS y `www`.** El certificado lo pone Cloudflare, no hay nada que
+instalar. En el panel de Cloudflare:
+
+- SSL/TLS → Edge Certificates → **Always Use HTTPS**: activado.
+- Para que `www` redirija al dominio principal: Rules → **Redirect Rules** →
+  plantilla "Redirect from WWW to root". Si no se configura, `www` igual
+  funciona (el túnel lo atiende), pero conviene una sola URL para Google OAuth.
+
+No hace falta abrir puertos en el firewall ni en el router: el túnel solo usa
+conexiones salientes.
+
+## 6B. Caddy (HTTPS)
 
 ```bash
 sudo dnf install -y 'dnf-command(copr)'

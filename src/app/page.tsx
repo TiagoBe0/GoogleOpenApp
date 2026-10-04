@@ -1,5 +1,12 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { Metadata, Viewport } from "next";
+import { Inter_Tight } from "next/font/google";
 import ContactForm from "@/components/landing/ContactForm";
+
+// Grotesca apretada para los títulos enormes en mayúsculas. Solo la carga esta
+// página: PsicoLink sigue con Geist y Fraunces.
+const grotesk = Inter_Tight({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-mm" });
 
 export const metadata: Metadata = {
   title: "Malbec Motion — Video publicitario con IA en Mendoza",
@@ -16,43 +23,41 @@ export const metadata: Metadata = {
   appleWebApp: { title: "Malbec Motion" },
 };
 
-export const viewport: Viewport = { themeColor: "#110c0d" };
+export const viewport: Viewport = { themeColor: "#000000" };
+
+/**
+ * Video de fondo de la portada. Se revisa al compilar: soltar el archivo en
+ * public/reel/ y volver a hacer el build alcanza para que aparezca.
+ */
+const HERO_VIDEO = "/reel/hero.mp4";
+const HERO_POSTER = "/reel/hero.jpg";
+const publicFile = (p: string) => fs.existsSync(path.join(process.cwd(), "public", p));
 
 const NAV = [
+  { href: "#somos", label: "Somos" },
   { href: "#servicios", label: "Servicios" },
-  { href: "#proceso", label: "Cómo trabajamos" },
   { href: "#precios", label: "Precios" },
-  { href: "#preguntas", label: "Preguntas" },
+  { href: "#contacto", label: "Contacto" },
 ];
 
-const AUDIENCES = [
-  {
-    title: "Bodegas",
-    body: "Degustaciones, vendimia, lanzamientos de etiqueta. Video que lleva gente a tu bodega y vende tu vino afuera.",
-  },
-  {
-    title: "Turismo y aventura",
-    body: "Rafting, cabalgatas, trekking, hoteles. Mostrá la experiencia antes de que el turista llegue a Mendoza.",
-  },
-  {
-    title: "Gastronomía",
-    body: "Restaurantes y menús de pasos. Reels que abren el apetito y llenan reservas en temporada.",
-  },
+const WHAT = ["Reels", "Spots", "Campañas", "Idiomas"];
+
+const SECTORS = [
+  { name: "Bodegas", tag: "Vendimia · Degustaciones", bg: "bg-[#8c1c3a]", fg: "text-white" },
+  { name: "Turismo aventura", tag: "Rafting · Trekking", bg: "bg-[#1f4d3a]", fg: "text-white" },
+  { name: "Gastronomía", tag: "Restaurantes · Menús", bg: "bg-[#e3a72f]", fg: "text-black" },
+  { name: "Hoteles", tag: "Posadas · Lodges", bg: "bg-[#0b0b0b]", fg: "text-white" },
+  { name: "Olivícolas", tag: "Aceites · Productos", bg: "bg-[#9aa63a]", fg: "text-black" },
+  { name: "Eventos", tag: "Ferias · Lanzamientos", bg: "bg-[#c4512b]", fg: "text-white" },
 ];
+
+const SERVICES = ["Reels", "Spots", "Campañas", "Traducción"];
 
 const STEPS = [
-  { n: "01", title: "Brief", body: "Una llamada de 30 minutos. Entendemos tu negocio, tu público y qué querés lograr." },
-  { n: "02", title: "Guion en 48 h", body: "Te mandamos guion y storyboard para aprobar antes de producir una sola toma." },
-  {
-    n: "03",
-    title: "Producción",
-    body: "Combinamos tu material real con escenas generadas por IA en nuestros propios equipos en Mendoza.",
-  },
-  {
-    n: "04",
-    title: "Entrega",
-    body: "En todos los formatos y en los idiomas que necesites. Dos rondas de cambios incluidas.",
-  },
+  { n: "01", title: "Brief", body: "Una llamada de 30 minutos para entender tu negocio y tu público." },
+  { n: "02", title: "Guion en 48 h", body: "Guion y storyboard para aprobar antes de producir una sola toma." },
+  { n: "03", title: "Producción", body: "Tu material real más escenas generadas con IA en nuestros equipos." },
+  { n: "04", title: "Entrega", body: "Todos los formatos y los idiomas que necesites. Dos rondas de cambios." },
 ];
 
 const PLANS = [
@@ -60,28 +65,20 @@ const PLANS = [
     name: "Pack Redes",
     price: "USD 400",
     period: "por mes",
-    pitch: "Presencia constante en Instagram y TikTok.",
-    items: ["8 reels por mes", "2 idiomas a elección", "Subtítulos y formatos vertical y cuadrado", "Calendario de publicación"],
+    items: ["8 reels por mes", "2 idiomas a elección", "Formatos vertical y cuadrado", "Calendario de publicación"],
     featured: false,
   },
   {
     name: "Spot",
     price: "USD 1.200",
     period: "por pieza",
-    pitch: "El video que presenta tu marca.",
-    items: [
-      "Spot de 30 segundos",
-      "Español, portugués e inglés",
-      "Formatos 16:9, 9:16 y 1:1",
-      "Guion, música y locución incluidos",
-    ],
+    items: ["Spot de 30 segundos", "Español, portugués e inglés", "Formatos 16:9, 9:16 y 1:1", "Guion, música y locución"],
     featured: true,
   },
   {
     name: "Temporada",
     price: "USD 2.800",
     period: "por campaña",
-    pitch: "Vendimia, invierno o temporada alta, completa.",
     items: ["1 spot + 12 reels", "Piezas para anuncios pagos", "3 idiomas", "Variantes para probar qué funciona"],
     featured: false,
   },
@@ -90,11 +87,11 @@ const PLANS = [
 const FAQ = [
   {
     q: "¿Se nota que está hecho con IA?",
-    a: "Trabajamos en modo híbrido: tu bodega, tu gente y tus productos son reales, filmados por vos o por nosotros. La IA suma paisajes, transiciones, animación de producto y versiones en otros idiomas. Lo que no pasa nuestro control de calidad, no se entrega.",
+    a: "Trabajamos en modo híbrido: tu bodega, tu gente y tus productos son reales. La IA suma paisajes, transiciones, animación de producto y versiones en otros idiomas. Lo que no pasa nuestro control de calidad, no se entrega.",
   },
   {
     q: "¿Puedo usar mis propias fotos y videos?",
-    a: "Sí, y lo recomendamos. Con material tuyo el resultado es más auténtico. Si no tenés, coordinamos una jornada corta de filmación.",
+    a: "Sí, y lo recomendamos: el resultado es más auténtico. Si no tenés material, coordinamos una jornada corta de filmación.",
   },
   {
     q: "¿Cuánto tarda?",
@@ -102,7 +99,7 @@ const FAQ = [
   },
   {
     q: "¿De quién son los derechos del video?",
-    a: "Tuyos. Una vez pagado, podés usarlo en redes, anuncios, tu web y ferias sin límite de tiempo.",
+    a: "Tuyos. Una vez pagado, lo usás en redes, anuncios, tu web y ferias sin límite de tiempo.",
   },
   {
     q: "¿Se puede hacer publicidad de vino?",
@@ -114,128 +111,160 @@ const FAQ = [
   },
 ];
 
-const container = "mx-auto w-full max-w-6xl px-4 sm:px-8";
-const eyebrow = "text-sm font-semibold uppercase tracking-[0.14em] text-mm-accent-text";
-const h2 = "font-display text-4xl font-semibold leading-tight text-mm-text sm:text-5xl";
+const wrap = "mx-auto w-full max-w-[1400px] px-4 sm:px-10";
+const label = "text-xs font-medium uppercase tracking-[0.08em]";
+const giant = "font-semibold uppercase leading-[0.86] tracking-[-0.045em]";
 
-/** Tres cuadros verticales: la misma pieza en tres idiomas, que es la propuesta. */
-function LanguageFrames() {
-  const frames = [
-    { lang: "ES", line: "Viví la vendimia", tc: "00:00:04:12" },
-    { lang: "PT", line: "Viva a vindima", tc: "00:00:04:12" },
-    { lang: "EN", line: "Live the harvest", tc: "00:00:04:12" },
-  ];
-
+/** Cordillera y viñedo en capas planas: fondo de la portada mientras no haya video. */
+function HeroScene() {
   return (
-    <div aria-hidden="true" className="grid grid-cols-3 gap-3 sm:gap-4">
-      {frames.map((f, i) => (
-        <div
-          key={f.lang}
-          className={`relative aspect-[9/16] overflow-hidden rounded-lg border border-mm-line bg-mm-surface ${i === 1 ? "translate-y-6" : ""}`}
-        >
-          {/* Paisaje abstracto: cielo, cordillera y viñedo en capas planas. */}
-          <div className="absolute inset-0 bg-[#2a1b1f]" />
-          <div className="absolute inset-x-0 top-[38%] h-[30%] bg-[#3b2a2e] [clip-path:polygon(0_100%,0_55%,18%_20%,32%_48%,50%_5%,66%_40%,80%_18%,100%_50%,100%_100%)]" />
-          <div className="absolute inset-x-0 top-[55%] h-[20%] bg-[#4d3135] [clip-path:polygon(0_100%,0_60%,25%_30%,45%_55%,70%_20%,100%_55%,100%_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-[30%] bg-mm-accent/80" />
-          <div className="absolute inset-x-0 bottom-0 h-[30%] bg-[repeating-linear-gradient(100deg,transparent_0_14px,rgba(0,0,0,0.25)_14px_17px)]" />
+    <div aria-hidden="true" className="absolute inset-0 bg-[#1b1416]">
+      <div className="absolute inset-x-0 top-0 h-2/3 bg-[linear-gradient(180deg,#2b1d22_0%,#4a2a31_70%,#6b3640_100%)]" />
+      <div className="absolute inset-x-0 top-[34%] h-[34%] bg-[#3a2a2f] [clip-path:polygon(0_100%,0_58%,9%_40%,17%_52%,28%_14%,37%_38%,47%_6%,58%_34%,66%_22%,77%_46%,88%_18%,100%_42%,100%_100%)]" />
+      <div className="absolute inset-x-0 top-[50%] h-[22%] bg-[#2a1f23] [clip-path:polygon(0_100%,0_56%,14%_34%,30%_58%,46%_26%,63%_52%,80%_30%,100%_54%,100%_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[#5b1a2c]" />
+      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[repeating-linear-gradient(98deg,transparent_0_38px,rgba(0,0,0,0.35)_38px_44px)]" />
+    </div>
+  );
+}
 
-          <div className="absolute left-2 top-2 flex items-center gap-1.5 text-[10px] font-semibold text-mm-text/90 sm:left-3 sm:top-3 sm:text-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-mm-accent-text" />
-            {f.lang}
-          </div>
-          <p className="absolute inset-x-2 bottom-[34%] font-display text-sm font-semibold leading-tight text-white sm:inset-x-3 sm:text-lg">
-            {f.line}
-          </p>
-          <p className="absolute bottom-2 left-2 font-mono text-[9px] tabular-nums text-white/70 sm:left-3 sm:text-[10px]">
-            {f.tc}
-          </p>
-        </div>
-      ))}
+/** Insignia circular con texto, al estilo sello. */
+function Badge() {
+  return (
+    <svg viewBox="0 0 200 200" className="h-40 w-40 shrink-0 sm:h-52 sm:w-52" role="img" aria-label="Hecho en Mendoza, video con IA">
+      <defs>
+        <path id="mm-ring" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0" />
+      </defs>
+      <circle cx="100" cy="100" r="98" fill="#0b0b0b" />
+      <text fill="#fff" fontSize="15" fontWeight="600" letterSpacing="3.4">
+        <textPath href="#mm-ring">HECHO EN MENDOZA · VIDEO CON IA · </textPath>
+      </text>
+      <circle cx="100" cy="100" r="50" fill="#8c1c3a" />
+      <text x="100" y="96" textAnchor="middle" fill="#fff" fontSize="20" fontWeight="700">
+        MALBEC
+      </text>
+      <text x="100" y="118" textAnchor="middle" fill="#fff" fontSize="20" fontWeight="700">
+        MOTION
+      </text>
+    </svg>
+  );
+}
+
+function Marquee({ word, className }: { word: string; className: string }) {
+  const items = Array.from({ length: 8 }, (_, i) => (
+    <span key={i} className="px-[0.25em]">
+      {word}
+    </span>
+  ));
+  return (
+    <div aria-hidden="true" className="overflow-hidden">
+      <div className={`mm-marquee ${className}`}>
+        {items}
+        {items}
+      </div>
     </div>
   );
 }
 
 export default function Landing() {
+  const hasVideo = publicFile(HERO_VIDEO);
+  const hasPoster = publicFile(HERO_POSTER);
+
   return (
-    <div className="theme-malbec min-h-screen bg-mm-bg text-mm-text">
+    <div
+      className={`theme-malbec ${grotesk.variable} min-h-screen bg-mm-bg font-[family-name:var(--font-mm)] text-mm-text`}
+    >
       <a
         href="#contenido"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-mm-accent focus:px-4 focus:py-3 focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-mm-accent focus:px-5 focus:py-3 focus:text-white"
       >
         Saltar al contenido
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-mm-line/60 bg-mm-bg/90 backdrop-blur">
-        <nav className={`${container} flex min-h-16 items-center justify-between gap-4`}>
-          <a href="#" className="flex min-h-11 items-center font-display text-xl font-semibold text-mm-text">
-            Malbec<span className="text-mm-accent-text">·</span>Motion
+      {/* Portada */}
+      <header className="relative flex min-h-[100svh] flex-col overflow-hidden bg-black text-white">
+        {hasVideo ? (
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            src={HERO_VIDEO}
+            poster={hasPoster ? HERO_POSTER : undefined}
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-hidden="true"
+          />
+        ) : (
+          <HeroScene />
+        )}
+        <div aria-hidden="true" className="absolute inset-0 bg-black/45" />
+
+        <nav className={`${wrap} relative z-10 flex min-h-20 items-center justify-between gap-6`}>
+          <a href="#" className="flex min-h-11 items-center gap-2 text-lg font-semibold tracking-tight">
+            <span aria-hidden="true" className="h-3 w-3 rounded-full bg-mm-accent ring-2 ring-white/80" />
+            Malbec Motion
           </a>
           <div className="hidden items-center gap-1 md:flex">
             {NAV.map((n) => (
-              <a
-                key={n.href}
-                href={n.href}
-                className="flex min-h-11 items-center rounded-md px-3 text-base text-mm-muted transition-colors hover:text-mm-text"
-              >
+              <a key={n.href} href={n.href} className={`${label} flex min-h-11 items-center px-3 text-white/85 hover:text-white`}>
                 {n.label}
               </a>
             ))}
           </div>
-          <a
-            href="#contacto"
-            className="flex min-h-11 items-center rounded-md bg-mm-accent px-4 text-base font-semibold text-white transition-colors hover:bg-mm-accent-hi"
-          >
-            Pedí tu propuesta
-          </a>
         </nav>
+
+        <div className={`${wrap} relative z-10 flex flex-1 flex-col justify-center py-16`}>
+          <h1 className="max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.035em] sm:text-7xl lg:text-8xl">
+            Video publicitario con IA
+          </h1>
+          <p className="mt-5 max-w-2xl text-xl leading-snug text-white/90 sm:text-2xl">
+            Para bodegas, turismo y gastronomía de Mendoza. En tres idiomas y en días.
+          </p>
+        </div>
+
+        <div className={`${wrap} relative z-10 pb-24 sm:pb-10`}>
+          <p className={`${label} text-white/80`}>Qué hacemos ↘</p>
+          <ul className="mt-3 w-56">
+            {WHAT.map((w, i) => (
+              <li key={w} className={`${label} flex justify-between border-b border-white/40 py-2 text-white`}>
+                <span>{w}</span>
+                <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </header>
 
       <main id="contenido">
-        {/* Hero */}
-        <section className={`${container} grid items-center gap-12 py-16 sm:py-24 lg:grid-cols-[1.15fr_1fr]`}>
-          <div>
-            <p className={eyebrow}>Agencia de video con IA · Mendoza</p>
-            <h1 className="mt-5 font-display text-5xl font-semibold leading-[1.05] text-mm-text sm:text-6xl lg:text-7xl">
-              Publicidad en video, en tres idiomas y en días.
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-mm-muted">
-              Spots y reels para bodegas, turismo y gastronomía de Mendoza. Tu material real, potenciado con
-              inteligencia artificial, para hablarle al turista argentino, al brasileño y al norteamericano.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href="#contacto"
-                className="flex min-h-12 items-center rounded-md bg-mm-accent px-6 text-base font-semibold text-white transition-colors hover:bg-mm-accent-hi"
-              >
-                Pedí tu propuesta
-              </a>
-              <a
-                href="#precios"
-                className="flex min-h-12 items-center rounded-md border border-mm-line px-6 text-base font-semibold text-mm-text transition-colors hover:bg-mm-surface"
-              >
-                Ver precios
-              </a>
+        {/* Somos */}
+        <section id="somos" className={`${wrap} scroll-mt-4 py-24 sm:py-32`}>
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
+              <h2 className={`${giant} text-4xl sm:text-6xl`}>
+                Somos una agencia de video con IA, hecha en Mendoza.
+              </h2>
+              <p className="mt-8 max-w-xl text-lg leading-relaxed text-mm-muted">
+                Combinamos tu material real con inteligencia artificial generada en nuestros propios equipos para
+                producir spots y reels en español, portugués e inglés. Más rápido y a una fracción del costo de una
+                producción tradicional, sin perder lo auténtico de tu marca.
+              </p>
             </div>
+            <Badge />
           </div>
-          <LanguageFrames />
-        </section>
 
-        {/* Datos del mercado */}
-        <section className="border-y border-mm-line bg-mm-surface">
-          <div className={`${container} grid gap-8 py-12 sm:grid-cols-3`}>
+          <dl className="mt-20 grid gap-10 border-t border-mm-line pt-10 sm:grid-cols-3">
             {[
               { k: "1,59 M", v: "visitantes recibieron las bodegas de Mendoza en 2024" },
               { k: "43 %", v: "de esos visitantes llegó desde el exterior" },
-              { k: "45 %", v: "de los extranjeros vino de Brasil. Tu próximo cliente habla portugués." },
+              { k: "45 %", v: "de los extranjeros vino de Brasil: tu próximo cliente habla portugués" },
             ].map((s) => (
               <div key={s.k}>
-                <p className="font-display text-5xl font-semibold tabular-nums text-mm-text">{s.k}</p>
-                <p className="mt-2 text-base leading-7 text-mm-muted">{s.v}</p>
+                <dt className="text-5xl font-semibold tabular-nums tracking-[-0.04em]">{s.k}</dt>
+                <dd className="mt-2 text-base leading-relaxed text-mm-muted">{s.v}</dd>
               </div>
             ))}
-          </div>
-          <p className={`${container} pb-6 text-xs text-mm-muted`}>
+          </dl>
+          <p className="mt-6 text-xs text-mm-muted">
             Fuente: relevamiento de enoturismo de Mendoza 2024, citado por{" "}
             <a
               className="underline underline-offset-2 hover:text-mm-text"
@@ -249,31 +278,67 @@ export default function Landing() {
           </p>
         </section>
 
-        {/* Para quién */}
-        <section id="servicios" className={`${container} scroll-mt-20 py-20 sm:py-28`}>
-          <p className={eyebrow}>Para quién</p>
-          <h2 className={`${h2} mt-4 max-w-3xl`}>Hecho para los negocios que hacen a Mendoza.</h2>
-          <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-mm-line bg-mm-line md:grid-cols-3">
-            {AUDIENCES.map((a) => (
-              <div key={a.title} className="bg-mm-bg p-8">
-                <h3 className="font-display text-2xl font-semibold text-mm-text">{a.title}</h3>
-                <p className="mt-3 text-base leading-7 text-mm-muted">{a.body}</p>
-              </div>
+        {/* Rubros */}
+        <section className={`${wrap} pb-24 sm:pb-32`}>
+          <h2 className="text-center text-xl font-semibold uppercase tracking-[-0.01em]">Para quién trabajamos</h2>
+          <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+            {SECTORS.map((s) => (
+              <li
+                key={s.name}
+                className={`relative flex aspect-[4/3] flex-col justify-end rounded-[3px] p-5 sm:p-7 ${s.bg} ${s.fg}`}
+              >
+                <span aria-hidden="true" className="absolute right-4 top-4 grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm">
+                  ↗
+                </span>
+                <span className="text-2xl font-semibold leading-none tracking-[-0.03em] sm:text-4xl">{s.name}</span>
+                <span className={`${label} mt-2 opacity-80`}>{s.tag}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
 
-        {/* Proceso */}
-        <section id="proceso" className="scroll-mt-20 border-t border-mm-line bg-mm-surface py-20 sm:py-28">
-          <div className={container}>
-            <p className={eyebrow}>Cómo trabajamos</p>
-            <h2 className={`${h2} mt-4 max-w-3xl`}>De la idea al video publicado, en una semana.</h2>
-            <ol className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Frase gigante */}
+        <section aria-label="Lo que hacemos" className={`${wrap} pb-24 sm:pb-32`}>
+          <p className={`${giant} text-[13vw] lg:text-[10vw]`}>
+            <span className="block">Video con IA</span>
+            <span className="block pl-[6vw]">en tres</span>
+            <span className="block pl-[22vw]">idiomas</span>
+          </p>
+        </section>
+
+        {/* Servicios */}
+        <section id="servicios" className="grid scroll-mt-4 bg-mm-ink text-white lg:grid-cols-2">
+          <div className="relative min-h-[50vh] overflow-hidden">
+            <HeroScene />
+            <div className="absolute inset-x-6 bottom-6 grid grid-cols-3 gap-3 sm:inset-x-10 sm:bottom-10">
+              {[
+                ["ES", "Viví la vendimia"],
+                ["PT", "Viva a vindima"],
+                ["EN", "Live the harvest"],
+              ].map(([lang, line]) => (
+                <div key={lang} className="rounded-[3px] bg-black/55 p-3 backdrop-blur-sm sm:p-4">
+                  <p className={`${label} text-white/70`}>{lang}</p>
+                  <p className="mt-1 text-sm font-semibold leading-tight sm:text-lg">{line}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="px-6 py-16 sm:px-12 sm:py-20">
+            <p className={`${label} border-b border-white/30 pb-3 text-white/70`}>Nuestros servicios</p>
+            <ul className="mt-8">
+              {SERVICES.map((s) => (
+                <li key={s} className={`${giant} text-5xl sm:text-6xl`}>
+                  {s}
+                  <sup className="ml-1 text-xl">°</sup>
+                </li>
+              ))}
+            </ul>
+            <ol className="mt-14 grid gap-8 sm:grid-cols-2">
               {STEPS.map((s) => (
-                <li key={s.n}>
-                  <p className="font-mono text-sm tabular-nums text-mm-accent-text">{s.n}</p>
-                  <h3 className="mt-3 text-xl font-semibold text-mm-text">{s.title}</h3>
-                  <p className="mt-2 text-base leading-7 text-mm-muted">{s.body}</p>
+                <li key={s.n} className="border-t border-white/25 pt-4">
+                  <p className="text-sm tabular-nums text-white/60">{s.n}</p>
+                  <h3 className="mt-1 text-lg font-semibold uppercase tracking-[-0.01em]">{s.title}</h3>
+                  <p className="mt-1 text-base leading-relaxed text-white/75">{s.body}</p>
                 </li>
               ))}
             </ol>
@@ -281,46 +346,43 @@ export default function Landing() {
         </section>
 
         {/* Precios */}
-        <section id="precios" className={`${container} scroll-mt-20 py-20 sm:py-28`}>
-          <p className={eyebrow}>Precios</p>
-          <h2 className={`${h2} mt-4 max-w-3xl`}>Precios claros, sin &ldquo;pedí presupuesto&rdquo;.</h2>
-          <p className="mt-4 max-w-2xl text-lg leading-8 text-mm-muted">
-            Precios de lanzamiento. Se pueden pagar en pesos al tipo de cambio del día.
-          </p>
-          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+        <section id="precios" className={`${wrap} scroll-mt-4 py-24 sm:py-32`}>
+          <div className="flex flex-col justify-between gap-6 border-b border-mm-line pb-8 sm:flex-row sm:items-end">
+            <h2 className={`${giant} text-5xl sm:text-7xl`}>Precios</h2>
+            <p className="max-w-sm text-base text-mm-muted">
+              Precios de lanzamiento, sin &ldquo;pedí presupuesto&rdquo;. Se pueden pagar en pesos al cambio del día.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 lg:grid-cols-3">
             {PLANS.map((p) => (
               <div
                 key={p.name}
-                className={`flex flex-col rounded-lg border p-8 ${p.featured ? "border-mm-accent bg-mm-surface-2" : "border-mm-line bg-mm-surface"}`}
+                className={`flex flex-col rounded-[3px] p-8 ${p.featured ? "bg-mm-ink text-white" : "bg-mm-surface text-mm-text"}`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-xl font-semibold text-mm-text">{p.name}</h3>
-                  {p.featured && (
-                    <span className="rounded-full bg-mm-accent px-3 py-1 text-xs font-semibold text-white">Más pedido</span>
-                  )}
+                  <h3 className="text-xl font-semibold uppercase tracking-[-0.01em]">{p.name}</h3>
+                  {p.featured && <span className={`${label} rounded-full bg-mm-accent px-3 py-1 text-white`}>Más pedido</span>}
                 </div>
-                <p className="mt-2 text-base text-mm-muted">{p.pitch}</p>
-                <p className="mt-6">
-                  <span className="font-display text-4xl font-semibold tabular-nums text-mm-text">{p.price}</span>{" "}
-                  <span className="text-base text-mm-muted">{p.period}</span>
+                <p className="mt-8">
+                  <span className="text-5xl font-semibold tabular-nums tracking-[-0.04em]">{p.price}</span>
+                  <span className={`ml-2 text-base ${p.featured ? "text-white/70" : "text-mm-muted"}`}>{p.period}</span>
                 </p>
-                <ul className="mt-6 grid gap-3 text-base text-mm-text">
+                <ul className="mt-8 grid gap-0 text-base">
                   {p.items.map((it) => (
-                    <li key={it} className="flex gap-3">
-                      <span aria-hidden="true" className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-mm-accent-text" />
+                    <li key={it} className={`border-t py-3 ${p.featured ? "border-white/20" : "border-mm-line"}`}>
                       {it}
                     </li>
                   ))}
                 </ul>
                 <a
                   href="#contacto"
-                  className={`mt-8 flex min-h-12 items-center justify-center rounded-md px-6 text-base font-semibold transition-colors ${
+                  className={`mt-8 flex min-h-12 items-center justify-center gap-2 rounded-full border px-6 text-sm font-semibold uppercase tracking-[0.04em] transition-colors ${
                     p.featured
-                      ? "bg-mm-accent text-white hover:bg-mm-accent-hi"
-                      : "border border-mm-line text-mm-text hover:bg-mm-surface-2"
+                      ? "border-white bg-white text-black hover:bg-white/85"
+                      : "border-mm-text hover:bg-mm-text hover:text-white"
                   }`}
                 >
-                  Elegir {p.name}
+                  Elegir {p.name} <span aria-hidden="true">✦</span>
                 </a>
               </div>
             ))}
@@ -328,22 +390,19 @@ export default function Landing() {
         </section>
 
         {/* Preguntas */}
-        <section id="preguntas" className="scroll-mt-20 border-t border-mm-line bg-mm-surface py-20 sm:py-28">
-          <div className={`${container} grid gap-12 lg:grid-cols-[1fr_1.4fr]`}>
-            <div>
-              <p className={eyebrow}>Preguntas</p>
-              <h2 className={`${h2} mt-4`}>Lo que nos preguntan antes de empezar.</h2>
-            </div>
-            <div className="divide-y divide-mm-line border-y border-mm-line">
+        <section id="preguntas" className={`${wrap} pb-24 sm:pb-32`}>
+          <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr]">
+            <h2 className={`${giant} text-4xl sm:text-6xl`}>Preguntas</h2>
+            <div className="border-t border-mm-text">
               {FAQ.map((f) => (
-                <details key={f.q} className="group">
-                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-lg font-semibold text-mm-text [&::-webkit-details-marker]:hidden">
+                <details key={f.q} className="group border-b border-mm-line">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-lg font-semibold [&::-webkit-details-marker]:hidden">
                     {f.q}
-                    <span aria-hidden="true" className="text-2xl font-normal text-mm-accent-text transition-transform group-open:rotate-45">
+                    <span aria-hidden="true" className="text-2xl font-normal transition-transform group-open:rotate-45">
                       +
                     </span>
                   </summary>
-                  <p className="pb-5 text-base leading-7 text-mm-muted">{f.a}</p>
+                  <p className="pb-5 text-base leading-relaxed text-mm-muted">{f.a}</p>
                 </details>
               ))}
             </div>
@@ -351,13 +410,14 @@ export default function Landing() {
         </section>
 
         {/* Contacto */}
-        <section id="contacto" className={`${container} scroll-mt-20 py-20 sm:py-28`}>
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.3fr]">
+        <section id="contacto" className="scroll-mt-4 pb-24 sm:pb-32">
+          <h2 className="sr-only">Contacto</h2>
+          <Marquee word="Contacto" className={`${giant} text-[18vw] lg:text-[11vw]`} />
+          <div className={`${wrap} mt-10 grid gap-12 border-t border-mm-text/40 pt-12 lg:grid-cols-[1fr_1.4fr]`}>
             <div>
-              <p className={eyebrow}>Contacto</p>
-              <h2 className={`${h2} mt-4`}>Contanos qué querés mostrar.</h2>
-              <p className="mt-5 max-w-md text-lg leading-8 text-mm-muted">
-                Te respondemos con una propuesta concreta: qué video, en qué idiomas, cuánto cuesta y cuándo lo tenés.
+              <p className="max-w-xs text-lg leading-snug">
+                Contanos qué querés mostrar y te respondemos con una propuesta concreta: qué video, en qué idiomas,
+                cuánto cuesta y cuándo lo tenés.
               </p>
             </div>
             <ContactForm />
@@ -365,15 +425,32 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-mm-line">
-        <div className={`${container} flex flex-col gap-2 py-10 text-sm text-mm-muted sm:flex-row sm:items-center sm:justify-between`}>
-          <p>
-            <span className="font-display font-semibold text-mm-text">Malbec Motion</span> · Video publicitario con IA ·
-            Mendoza, Argentina
-          </p>
-          <p>© {new Date().getFullYear()} Malbec Motion</p>
+      <footer className="bg-mm-ink pt-14 text-white">
+        <div className={`${wrap} flex flex-wrap items-start justify-between gap-6`}>
+          <p className={`${label} max-w-xs text-white/80`}>Video publicitario con IA · Mendoza, Argentina</p>
+          <a href="#" className={`${label} flex min-h-11 items-center gap-2 text-white`}>
+            <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-white text-black">
+              ↑
+            </span>
+            Volver arriba
+          </a>
         </div>
+        <div className="mt-12">
+          <Marquee word="Malbec Motion" className={`${giant} text-[16vw] lg:text-[10vw]`} />
+        </div>
+        <p className={`${wrap} py-8 text-xs text-white/60`}>© {new Date().getFullYear()} Malbec Motion</p>
       </footer>
+
+      {/* Atajo flotante a la propuesta, como el "Agendar una reunión" de la referencia. */}
+      <a
+        href="#contacto"
+        className="fixed bottom-5 right-5 z-40 flex min-h-12 items-center gap-2 rounded-full bg-mm-accent pl-5 pr-2 text-sm font-semibold text-white shadow-lg shadow-black/25 transition-colors hover:bg-mm-accent-hi"
+      >
+        Pedí tu propuesta
+        <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-full bg-white text-mm-accent">
+          ✦
+        </span>
+      </a>
     </div>
   );
 }

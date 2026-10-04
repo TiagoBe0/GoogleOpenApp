@@ -56,19 +56,41 @@
 }
 
 /* Malbec Motion (landing de la agencia, ruta /). Identidad propia y separada de
-   PsicoLink: oscura y de cine, porque lo que se vende es video. El acento es
-   rojo malbec, inclinado al rojo y no al violeta (ver DESIGN.md). Encapsulado
-   en .theme-malbec para que no toque ninguna pantalla de PsicoLink. */
+   PsicoLink: editorial en blanco y negro, tipografía grotesca enorme y el rojo
+   malbec como único acento (inclinado al rojo, nunca violeta: ver DESIGN.md).
+   Encapsulado en .theme-malbec para que no toque ninguna pantalla de PsicoLink. */
 .theme-malbec {
-  --mm-bg: #110c0d;
-  --mm-surface: #1a1315;
-  --mm-surface-2: #241a1d;
-  --mm-line: #35282b;
-  --mm-text: #f4ece6;
-  --mm-muted: #b9aba6;
-  --mm-accent: #b3304c;
-  --mm-accent-hi: #c93d5b;
-  --mm-accent-text: #ec7d93;
+  --mm-bg: #ffffff;
+  --mm-surface: #f3f4f5;
+  --mm-surface-2: #e9eaeb;
+  --mm-line: #d4d6d8;
+  --mm-text: #0b0b0b;
+  --mm-muted: #5e6062;
+  --mm-ink: #000000;
+  --mm-accent: #8c1c3a;
+  --mm-accent-hi: #a3243f;
+  --mm-accent-text: #8c1c3a;
+}
+
+/* Texto que pasa en loop (CONTACTO, el nombre en el pie). Va en una capa para
+   no pisar utilidades de Tailwind. Quieto para quien pide menos movimiento. */
+@layer components {
+  .mm-marquee {
+    display: flex;
+    width: max-content;
+    animation: mm-marquee 28s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mm-marquee {
+      animation: none;
+    }
+  }
+}
+
+@keyframes mm-marquee {
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @theme inline {
@@ -99,6 +121,7 @@
   --color-mm-accent: var(--mm-accent);
   --color-mm-accent-hi: var(--mm-accent-hi);
   --color-mm-accent-text: var(--mm-accent-text);
+  --color-mm-ink: var(--mm-ink);
 
   /* layout.tsx carga las fuentes y expone estas variables. El scaffold apuntaba
      --font-sans a --font-geist-sans, una variable que nadie definía. */

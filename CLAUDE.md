@@ -225,9 +225,13 @@ cliente desactualizado la primera vez.
 `malbecmotion.com` es ahora la landing de una agencia de video publicitario con
 IA. PsicoLink sigue entero, con su home movida a `/terapia`.
 
-- Identidad propia, separada de DESIGN.md: tokens `--mm-*` encapsulados en
-  `.theme-malbec` (`globals.css`), oscura, acento rojo malbec (nunca violeta).
+- Identidad propia, separada de DESIGN.md: editorial en blanco y negro al
+  estilo de wesagencia.com (grotesca Inter Tight enorme en mayúsculas, bloques
+  negros, texto en loop, botones píldora), con el rojo malbec como único acento,
+  nunca violeta. Tokens `--mm-*` encapsulados en `.theme-malbec` (`globals.css`).
   Las reglas de 44px y de no poner `font-family` sin capa siguen valiendo.
+- Video de portada: soltar `public/reel/hero.mp4` (y opcional `hero.jpg` de
+  póster) y volver a compilar. Sin archivo se ve una escena dibujada en CSS.
 - El formulario postea a `POST /api/leads`. La consulta **se guarda primero** en
   la tabla `Lead` y el aviso a `LEADS_NOTIFY_EMAIL` sale en `after()`: sin SMTP
   la consulta no se pierde. Validación y plantilla en `src/lib/leads.ts`, con

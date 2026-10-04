@@ -6,7 +6,7 @@ import { SERVICES } from "@/lib/leads";
 type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string };
 
 const field =
-  "min-h-11 w-full rounded-md border border-mm-line bg-mm-bg px-3.5 py-2.5 text-base text-mm-text placeholder:text-mm-muted/70 focus:border-mm-accent-text focus:outline-none focus:ring-2 focus:ring-mm-accent/40";
+  "min-h-12 w-full rounded-[3px] border border-mm-line bg-mm-bg px-4 py-3 text-base text-mm-text placeholder:text-mm-muted/70 focus:border-mm-text focus:outline-none focus:ring-2 focus:ring-mm-text/15";
 const label = "mb-1.5 block text-sm font-medium text-mm-text";
 
 export default function ContactForm() {
@@ -37,15 +37,15 @@ export default function ContactForm() {
 
   if (status.kind === "sent") {
     return (
-      <div role="status" className="rounded-lg border border-mm-line bg-mm-surface p-8">
-        <p className="font-display text-2xl font-semibold text-mm-text">¡Gracias! Ya tenemos tu consulta.</p>
+      <div role="status" className="rounded-[3px] bg-mm-surface p-8">
+        <p className="text-3xl font-semibold tracking-[-0.03em] text-mm-text">¡Gracias! Ya tenemos tu consulta.</p>
         <p className="mt-3 text-base leading-7 text-mm-muted">
           Te escribimos dentro de las 24 horas hábiles para coordinar una llamada corta y entender tu proyecto.
         </p>
         <button
           type="button"
           onClick={() => setStatus({ kind: "idle" })}
-          className="mt-6 min-h-11 rounded-md px-4 text-base font-semibold text-mm-accent-text hover:bg-mm-surface-2"
+          className="mt-6 min-h-11 rounded-full border border-mm-text px-5 text-sm font-semibold uppercase tracking-[0.04em] hover:bg-mm-text hover:text-white"
         >
           Enviar otra consulta
         </button>
@@ -56,7 +56,7 @@ export default function ContactForm() {
   const sending = status.kind === "sending";
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-5 rounded-lg border border-mm-line bg-mm-surface p-6 sm:p-8">
+    <form onSubmit={onSubmit} noValidate className="grid gap-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="lead-name" className={label}>Nombre</label>
@@ -110,7 +110,7 @@ export default function ContactForm() {
       </div>
 
       {status.kind === "error" && (
-        <p role="alert" className="rounded-md border border-mm-accent/50 bg-mm-accent/10 px-4 py-3 text-base text-mm-text">
+        <p role="alert" className="rounded-[3px] border border-mm-accent/50 bg-mm-accent/10 px-4 py-3 text-base text-mm-text">
           {status.message}
         </p>
       )}
@@ -118,9 +118,9 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={sending}
-        className="min-h-12 rounded-md bg-mm-accent px-6 text-base font-semibold text-white transition-colors hover:bg-mm-accent-hi disabled:opacity-60"
+        className="flex min-h-12 w-fit items-center gap-2 rounded-full border border-mm-text px-7 text-sm font-semibold uppercase tracking-[0.04em] text-mm-text transition-colors hover:bg-mm-text hover:text-white disabled:opacity-60"
       >
-        {sending ? "Enviando…" : "Quiero mi propuesta"}
+        {sending ? "Enviando…" : "Enviar mensaje"} <span aria-hidden="true">✦</span>
       </button>
       <p className="text-sm text-mm-muted">Respondemos en menos de 24 horas hábiles. Sin compromiso.</p>
     </form>

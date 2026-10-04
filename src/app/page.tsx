@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter_Tight } from "next/font/google";
 import ContactForm from "@/components/landing/ContactForm";
 import InViewVideo from "@/components/landing/InViewVideo";
+import Logo from "@/components/landing/Logo";
 import { WHATSAPP_DISPLAY, whatsappLink } from "@/lib/contact";
 
 // Grotesca apretada para los títulos enormes en mayúsculas. Solo la carga esta
@@ -23,6 +24,14 @@ export const metadata: Metadata = {
     type: "website",
   },
   appleWebApp: { title: "Malbec Motion" },
+  // La landing tiene su propia marca: no hereda el ícono de PsicoLink del layout.
+  icons: {
+    icon: [
+      { url: "/brand/icon.svg", type: "image/svg+xml" },
+      { url: "/brand/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/brand/icon-180.png",
+  },
 };
 
 export const viewport: Viewport = { themeColor: "#000000" };
@@ -155,12 +164,17 @@ function Badge() {
         <textPath href="#mm-ring">HECHO EN MENDOZA · VIDEO CON IA · </textPath>
       </text>
       <circle cx="100" cy="100" r="50" fill="#8c1c3a" />
-      <text x="100" y="96" textAnchor="middle" fill="#fff" fontSize="20" fontWeight="700">
-        MALBEC
-      </text>
-      <text x="100" y="118" textAnchor="middle" fill="#fff" fontSize="20" fontWeight="700">
-        MOTION
-      </text>
+      <svg x="76" y="62" width="48" height="76" viewBox="60 10 80 182" className="text-white">
+        <mask id="mm-badge-bite">
+          <rect width="200" height="200" fill="#fff" />
+          <circle cx="144" cy="100" r="26" fill="#000" />
+        </mask>
+        <path
+          d="M90 14 H110 V52 C110 62 136 70 136 96 V178 C136 184 132 188 126 188 H74 C68 188 64 184 64 178 V96 C64 70 90 62 90 52 Z"
+          fill="currentColor"
+          mask="url(#mm-badge-bite)"
+        />
+      </svg>
     </svg>
   );
 }
@@ -218,7 +232,7 @@ export default function Landing() {
 
         <nav className={`${wrap} relative z-10 flex min-h-20 items-center justify-between gap-6`}>
           <a href="#" className="flex min-h-11 items-center gap-2 text-lg font-semibold tracking-tight">
-            <span aria-hidden="true" className="h-3 w-3 rounded-full bg-mm-accent ring-2 ring-white/80" />
+            <Logo className="h-8 w-auto" />
             Malbec Motion
           </a>
           <div className="hidden items-center gap-1 md:flex">

@@ -52,3 +52,7 @@ client_secret_*.json
 
 # Credenciales locales (nunca commitear)
 credentials.txt
+
+# Videos del portfolio de Malbec Motion: pesan, no van al repo. Se copian al
+# servidor con scp (ver CLAUDE.md, "Landing de Malbec Motion").
+/public/reel/

@@ -3,6 +3,8 @@ import path from "node:path";
 import type { Metadata, Viewport } from "next";
 import { Inter_Tight } from "next/font/google";
 import ContactForm from "@/components/landing/ContactForm";
+import InViewVideo from "@/components/landing/InViewVideo";
+import { WHATSAPP_DISPLAY, whatsappLink } from "@/lib/contact";
 
 // Grotesca apretada para los títulos enormes en mayúsculas. Solo la carga esta
 // página: PsicoLink sigue con Geist y Fraunces.
@@ -35,6 +37,7 @@ const publicFile = (p: string) => fs.existsSync(path.join(process.cwd(), "public
 
 const NAV = [
   { href: "#somos", label: "Somos" },
+  { href: "#portfolio", label: "Portfolio" },
   { href: "#servicios", label: "Servicios" },
   { href: "#precios", label: "Precios" },
   { href: "#contacto", label: "Contacto" },
@@ -52,6 +55,18 @@ const SECTORS = [
 ];
 
 const SERVICES = ["Reels", "Spots", "Campañas", "Traducción"];
+
+/** Piezas del portfolio, todas generadas con LTX en nuestros equipos. Archivos en public/reel/. */
+const PORTFOLIO = [
+  { file: "perfume_amber", title: "Ámbar", kind: "Producto" },
+  { file: "synthwave_coche", title: "Neón", kind: "Automotor" },
+  { file: "cabana_niebla", title: "Cabaña en la niebla", kind: "Turismo" },
+  { file: "retrato_neonoir", title: "Neo-noir", kind: "Retrato" },
+  { file: "hombre_playa", title: "Costa", kind: "Lifestyle" },
+  { file: "cabana_simetrica", title: "Refugio", kind: "Hospedaje" },
+];
+const REEL = "/reel/reel.mp4";
+const REEL_POSTER = "/reel/reel.jpg";
 
 const STEPS = [
   { n: "01", title: "Brief", body: "Una llamada de 30 minutos para entender tu negocio y tu público." },
@@ -169,6 +184,8 @@ function Marquee({ word, className }: { word: string; className: string }) {
 export default function Landing() {
   const hasVideo = publicFile(HERO_VIDEO);
   const hasPoster = publicFile(HERO_POSTER);
+  const hasReel = publicFile(REEL);
+  const pieces = PORTFOLIO.filter((p) => publicFile(`/reel/${p.file}.mp4`));
 
   return (
     <div
@@ -278,6 +295,31 @@ export default function Landing() {
           </p>
         </section>
 
+        {/* Portfolio */}
+        {pieces.length > 0 && (
+          <section id="portfolio" className={`${wrap} scroll-mt-4 pb-24 sm:pb-32`}>
+            <h2 className="text-center text-xl font-semibold uppercase tracking-[-0.01em]">Nuestro portfolio</h2>
+            <p className="mx-auto mt-3 max-w-lg text-center text-base text-mm-muted">
+              Cada pieza fue generada con IA en nuestros propios equipos.
+            </p>
+            <ul className="mt-10 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+              {pieces.map((p) => (
+                <li key={p.file} className="group relative aspect-video overflow-hidden rounded-[3px] bg-black">
+                  <InViewVideo
+                    src={`/reel/${p.file}.mp4`}
+                    poster={`/reel/${p.file}.jpg`}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-12 text-white">
+                    <p className="text-xl font-semibold leading-none tracking-[-0.02em]">{p.title}</p>
+                    <p className={`${label} mt-1.5 text-white/75`}>{p.kind}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {/* Rubros */}
         <section className={`${wrap} pb-24 sm:pb-32`}>
           <h2 className="text-center text-xl font-semibold uppercase tracking-[-0.01em]">Para quién trabajamos</h2>
@@ -309,8 +351,24 @@ export default function Landing() {
         {/* Servicios */}
         <section id="servicios" className="grid scroll-mt-4 bg-mm-ink text-white lg:grid-cols-2">
           <div className="relative min-h-[50vh] overflow-hidden">
-            <HeroScene />
-            <div className="absolute inset-x-6 bottom-6 grid grid-cols-3 gap-3 sm:inset-x-10 sm:bottom-10">
+            {hasReel ? (
+              <div className="flex h-full flex-col justify-center gap-4 px-6 py-12 sm:px-10">
+                <p className={`${label} text-white/70`}>Reel 2026 · 60 segundos</p>
+                <video
+                  src={REEL}
+                  poster={REEL_POSTER}
+                  controls
+                  playsInline
+                  preload="none"
+                  className="aspect-video w-full rounded-[3px] bg-black"
+                >
+                  Tu navegador no puede reproducir este video.
+                </video>
+              </div>
+            ) : (
+              <HeroScene />
+            )}
+            <div className={`${hasReel ? "hidden" : ""} absolute inset-x-6 bottom-6 grid grid-cols-3 gap-3 sm:inset-x-10 sm:bottom-10`}>
               {[
                 ["ES", "Viví la vendimia"],
                 ["PT", "Viva a vindima"],
@@ -419,6 +477,15 @@ export default function Landing() {
                 Contanos qué querés mostrar y te respondemos con una propuesta concreta: qué video, en qué idiomas,
                 cuánto cuesta y cuándo lo tenés.
               </p>
+              <p className="mt-8 text-base text-mm-muted">¿Preferís hablar ahora?</p>
+              <a
+                href={whatsappLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex min-h-11 items-center text-2xl font-semibold tracking-[-0.02em] underline decoration-1 underline-offset-4 hover:text-mm-accent"
+              >
+                {WHATSAPP_DISPLAY}
+              </a>
             </div>
             <ContactForm />
           </div>
@@ -427,7 +494,17 @@ export default function Landing() {
 
       <footer className="bg-mm-ink pt-14 text-white">
         <div className={`${wrap} flex flex-wrap items-start justify-between gap-6`}>
-          <p className={`${label} max-w-xs text-white/80`}>Video publicitario con IA · Mendoza, Argentina</p>
+          <div>
+            <p className={`${label} max-w-xs text-white/80`}>Video publicitario con IA · Mendoza, Argentina</p>
+            <a
+              href={whatsappLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${label} mt-2 inline-flex min-h-11 items-center text-white hover:text-white/75`}
+            >
+              WhatsApp {WHATSAPP_DISPLAY}
+            </a>
+          </div>
           <a href="#" className={`${label} flex min-h-11 items-center gap-2 text-white`}>
             <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-white text-black">
               ↑
@@ -441,14 +518,18 @@ export default function Landing() {
         <p className={`${wrap} py-8 text-xs text-white/60`}>© {new Date().getFullYear()} Malbec Motion</p>
       </footer>
 
-      {/* Atajo flotante a la propuesta, como el "Agendar una reunión" de la referencia. */}
+      {/* Atajo flotante a WhatsApp, como el "Agendar una reunión" de la referencia. */}
       <a
-        href="#contacto"
-        className="fixed bottom-5 right-5 z-40 flex min-h-12 items-center gap-2 rounded-full bg-mm-accent pl-5 pr-2 text-sm font-semibold text-white shadow-lg shadow-black/25 transition-colors hover:bg-mm-accent-hi"
+        href={whatsappLink()}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-5 right-5 z-40 flex min-h-12 items-center gap-2 rounded-full border border-[#1faa52] bg-white pl-5 pr-1.5 text-sm font-semibold text-[#0b0b0b] shadow-lg shadow-black/20 transition-colors hover:bg-[#effaf2]"
       >
-        Pedí tu propuesta
-        <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-full bg-white text-mm-accent">
-          ✦
+        Agendar por WhatsApp
+        <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-full bg-[#25d366] text-white">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+            <path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.79-1.47-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.21 3.07.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35zM12.05 21.5h-.01a9.4 9.4 0 0 1-4.79-1.31l-.34-.2-3.56.93.95-3.47-.22-.36A9.4 9.4 0 0 1 2.6 12.05c0-5.2 4.24-9.44 9.46-9.44 2.52 0 4.9.99 6.68 2.77a9.38 9.38 0 0 1 2.76 6.68c0 5.21-4.24 9.44-9.45 9.44zm8.05-17.5A11.32 11.32 0 0 0 12.05.67C5.78.67.67 5.77.67 12.05c0 2 .52 3.96 1.52 5.69L.57 23.33l5.72-1.5a11.36 11.36 0 0 0 5.75 1.47h.01c6.27 0 11.38-5.1 11.38-11.38 0-3.04-1.18-5.9-3.33-8.05z" />
+          </svg>
         </span>
       </a>
     </div>

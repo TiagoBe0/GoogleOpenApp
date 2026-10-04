@@ -230,8 +230,12 @@ IA. PsicoLink sigue entero, con su home movida a `/terapia`.
   negros, texto en loop, botones píldora), con el rojo malbec como único acento,
   nunca violeta. Tokens `--mm-*` encapsulados en `.theme-malbec` (`globals.css`).
   Las reglas de 44px y de no poner `font-family` sin capa siguen valiendo.
-- Video de portada: soltar `public/reel/hero.mp4` (y opcional `hero.jpg` de
-  póster) y volver a compilar. Sin archivo se ve una escena dibujada en CSS.
+- Videos (portada, portfolio y reel) en `public/reel/`, **fuera de git** por
+  peso. Se comprimen con ffmpeg (sin audio, `-movflags +faststart`) y se copian
+  al servidor con `scp`; después hay que recompilar, porque la página revisa al
+  compilar qué archivos existen. La lista de piezas está en `PORTFOLIO`
+  (`src/app/page.tsx`); una pieza sin archivo no se muestra.
+- WhatsApp: número y link en `src/lib/contact.ts`, un solo lugar.
 - El formulario postea a `POST /api/leads`. La consulta **se guarda primero** en
   la tabla `Lead` y el aviso a `LEADS_NOTIFY_EMAIL` sale en `after()`: sin SMTP
   la consulta no se pierde. Validación y plantilla en `src/lib/leads.ts`, con

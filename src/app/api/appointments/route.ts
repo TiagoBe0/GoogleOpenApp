@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { findConflictingAppointment, isWithinAvailability } from "@/lib/appointment-rules";
 import { notifyNewAppointment } from "@/lib/notifications";
+import { appUrl } from "@/lib/app-url";
 
 export async function GET() {
   const session = await auth();
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
 
   const mpClient = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
   const preferenceClient = new Preference(mpClient);
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = appUrl();
 
   try {
     const preference = await preferenceClient.create({

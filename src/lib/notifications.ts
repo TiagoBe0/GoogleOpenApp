@@ -4,6 +4,7 @@ import { sendPush } from "./push";
 import * as push from "./push-payloads";
 import { buildIcs } from "./ics";
 import { DEFAULT_TIMEZONE } from "./timezone";
+import { appUrl } from "./app-url";
 import {
   appointmentCancelledForPatient,
   appointmentCancelledForPsychologist,
@@ -91,10 +92,6 @@ function icsAttachment(
       contentType: `text/calendar; charset=utf-8; method=${status === "CANCELLED" ? "CANCEL" : "REQUEST"}`,
     },
   ];
-}
-
-function appUrl(): string {
-  return (process.env.NEXTAUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
 }
 
 /** Reúne los datos del turno y de las dos partes, o null si el turno ya no está. */

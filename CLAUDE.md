@@ -220,6 +220,19 @@ Y nunca usar `prisma migrate dev --skip-generate` salvo que se corra
 `prisma generate` a mano después: saltear la generación es lo que dejó el
 cliente desactualizado la primera vez.
 
+## Landing de Malbec Motion (`/`)
+
+`malbecmotion.com` es ahora la landing de una agencia de video publicitario con
+IA. PsicoLink sigue entero, con su home movida a `/terapia`.
+
+- Identidad propia, separada de DESIGN.md: tokens `--mm-*` encapsulados en
+  `.theme-malbec` (`globals.css`), oscura, acento rojo malbec (nunca violeta).
+  Las reglas de 44px y de no poner `font-family` sin capa siguen valiendo.
+- El formulario postea a `POST /api/leads`. La consulta **se guarda primero** en
+  la tabla `Lead` y el aviso a `LEADS_NOTIFY_EMAIL` sale en `after()`: sin SMTP
+  la consulta no se pierde. Validación y plantilla en `src/lib/leads.ts`, con
+  tests; tiene un campo trampa (`website`) contra bots.
+
 ## Design System
 
 Leer [DESIGN.md](DESIGN.md) **antes** de cualquier decisión visual o de interfaz. Ahí

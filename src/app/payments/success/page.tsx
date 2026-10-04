@@ -100,7 +100,7 @@ export default async function PaymentSuccessPage({
             Ver mis turnos
           </Link>
           <Link
-            href="/"
+            href="/terapia"
             className="flex min-h-11 w-full items-center justify-center rounded-md text-primary font-semibold text-sm hover:bg-surface-2 transition-colors"
           >
             Ir al inicio

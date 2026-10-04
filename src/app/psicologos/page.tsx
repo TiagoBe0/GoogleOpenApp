@@ -102,7 +102,7 @@ export default async function PsicologosPage({
     <main className="min-h-screen bg-bg">
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-5 py-4">
-          <Link href="/" className="font-display text-lg font-semibold text-ink">
+          <Link href="/terapia" className="font-display text-lg font-semibold text-ink">
             PsicoLink
           </Link>
           <Link

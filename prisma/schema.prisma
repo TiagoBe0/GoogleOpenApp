@@ -199,3 +199,19 @@ model Review {
   @@unique([patientId, psychologistId])
   @@index([psychologistId])
 }
+
+// Consulta que entra por el formulario de la landing de Malbec Motion. Se
+// guarda antes de avisar por correo: sin SMTP configurado, o con el correo
+// caído, la consulta igual queda y no se pierde un cliente.
+model Lead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  phone     String?
+  service   String?
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

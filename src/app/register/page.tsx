@@ -61,7 +61,7 @@ export default function RegisterPage() {
     <main className="min-h-screen bg-bg text-ink">
       <section className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_460px] lg:px-10">
         <div className="hidden max-w-xl lg:block">
-          <Link href="/" className="font-display text-2xl font-semibold text-ink">
+          <Link href="/terapia" className="font-display text-2xl font-semibold text-ink">
             PsicoLink
           </Link>
           <p className="mt-12 text-sm font-semibold uppercase tracking-normal text-primary">
@@ -77,7 +77,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="w-full rounded-lg border border-line bg-surface p-6 shadow-sm sm:p-8">
-          <Link href="/" className="mb-8 block font-display text-2xl font-semibold text-ink lg:hidden">
+          <Link href="/terapia" className="mb-8 block font-display text-2xl font-semibold text-ink lg:hidden">
             PsicoLink
           </Link>
           <div className="mb-6">

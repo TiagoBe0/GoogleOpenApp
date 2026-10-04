@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "Reservá turnos con tu psicólogo: agenda sincronizada, pago online y confirmación del profesional.",
     lang: "es",
-    start_url: "/",
+    start_url: "/terapia",
     scope: "/",
     display: "standalone",
     background_color: "#FBFAF8",

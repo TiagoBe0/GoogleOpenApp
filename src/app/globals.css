@@ -55,6 +55,22 @@
   }
 }
 
+/* Malbec Motion (landing de la agencia, ruta /). Identidad propia y separada de
+   PsicoLink: oscura y de cine, porque lo que se vende es video. El acento es
+   rojo malbec, inclinado al rojo y no al violeta (ver DESIGN.md). Encapsulado
+   en .theme-malbec para que no toque ninguna pantalla de PsicoLink. */
+.theme-malbec {
+  --mm-bg: #110c0d;
+  --mm-surface: #1a1315;
+  --mm-surface-2: #241a1d;
+  --mm-line: #35282b;
+  --mm-text: #f4ece6;
+  --mm-muted: #b9aba6;
+  --mm-accent: #b3304c;
+  --mm-accent-hi: #c93d5b;
+  --mm-accent-text: #ec7d93;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -73,6 +89,16 @@
   --color-info: var(--info);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-mm-bg: var(--mm-bg);
+  --color-mm-surface: var(--mm-surface);
+  --color-mm-surface-2: var(--mm-surface-2);
+  --color-mm-line: var(--mm-line);
+  --color-mm-text: var(--mm-text);
+  --color-mm-muted: var(--mm-muted);
+  --color-mm-accent: var(--mm-accent);
+  --color-mm-accent-hi: var(--mm-accent-hi);
+  --color-mm-accent-text: var(--mm-accent-text);
 
   /* layout.tsx carga las fuentes y expone estas variables. El scaffold apuntaba
      --font-sans a --font-geist-sans, una variable que nadie definía. */

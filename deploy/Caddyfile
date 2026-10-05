@@ -1,0 +1,17 @@
+# Caddy como proxy delante de Next.js para malbecmotion.com.
+# Caddy saca y renueva solo el certificado HTTPS (Let's Encrypt), siempre que
+# los registros DNS ya apunten a este servidor y los puertos 80 y 443 estén
+# abiertos.
+#
+# Instalar en /etc/caddy/Caddyfile y recargar: sudo systemctl reload caddy
+
+malbecmotion.com {
+	encode zstd gzip
+	reverse_proxy localhost:3000
+}
+
+# www redirige al dominio principal, así Google OAuth y MercadoPago ven
+# siempre la misma URL.
+www.malbecmotion.com {
+	redir https://malbecmotion.com{uri} permanent
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1A6B54" />
+    <title>Sin conexión — PsicoLink</title>
+    <style>
+      /* Página estática: no llega Tailwind ni las fuentes de Next, así que los
+         tokens de DESIGN.md van a mano. */
+      :root {
+        --bg: #fbfaf8;
+        --ink: rgb(42, 38, 35);
+        --muted: #6f6862;
+        --primary: #1a6b54;
+        --primary-hi: #14563f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+      main { max-width: 22rem; text-align: center; }
+      h1 { font-size: 1.5rem; margin: 0 0 0.5rem; font-weight: 600; }
+      p { margin: 0 0 1.5rem; color: var(--muted); }
+      button {
+        /* WCAG 2.5.5: mínimo 44px de alto en todo elemento interactivo. */
+        min-height: 44px;
+        padding: 0 1.5rem;
+        border: 0;
+        border-radius: 10px;
+        background: var(--primary);
+        color: #fff;
+        font: inherit;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      button:hover { background: var(--primary-hi); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg width="56" height="56" viewBox="0 0 512 512" aria-hidden="true">
+        <g fill="none" stroke="#1a6b54" stroke-width="34" stroke-linecap="round">
+          <circle cx="212" cy="256" r="86" />
+          <circle cx="300" cy="256" r="86" />
+        </g>
+      </svg>
+      <h1>Sin conexión</h1>
+      <p>
+        No pudimos contactar a PsicoLink. Revisá tu conexión e intentá de nuevo;
+        tus turnos siguen guardados.
+      </p>
+      <button type="button" onclick="location.reload()">Reintentar</button>
+    </main>
+  </body>
+</html>

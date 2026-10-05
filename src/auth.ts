@@ -5,6 +5,21 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+/**
+ * Scopes para conectar Google Calendar, pedidos aparte del login.
+ *
+ * `calendar.events` es sensible para Google, así que mientras la app no esté
+ * verificada quien lo acepte va a ver la advertencia de app no verificada.
+ * Pidiéndolo solo acá, esa pantalla la ve únicamente el profesional que decide
+ * sincronizar su agenda, y nunca un paciente que solo quiere reservar un turno.
+ */
+export const CALENDAR_SCOPE = [
+  "openid",
+  "email",
+  "profile",
+  "https://www.googleapis.com/auth/calendar.events",
+].join(" ");
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
@@ -17,14 +32,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       allowDangerousEmailAccountLinking: true,
+      // Entrar pide SOLO datos básicos. calendar.events es un scope sensible:
+      // pedirlo acá hacía que todo el mundo, pacientes incluidos, viera la
+      // pantalla "Google hasn't verified this app" antes de poder registrarse.
+      // El calendario se pide aparte, desde "Conectar Google Calendar", que es
+      // el único lugar donde hace falta. Ver CALENDAR_SCOPE abajo.
       authorization: {
         params: {
-          scope: [
-            "openid",
-            "email",
-            "profile",
-            "https://www.googleapis.com/auth/calendar.events",
-          ].join(" "),
+          scope: ["openid", "email", "profile"].join(" "),
           access_type: "offline",
           prompt: "consent",
         },

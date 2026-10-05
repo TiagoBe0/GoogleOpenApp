@@ -1,20 +1,268 @@
 @import "tailwindcss";
 
+/* Tokens del sistema de diseño. El fundamento de cada decisión está en DESIGN.md;
+   no cambiar valores acá sin actualizar ese documento. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Neutros cálidos. Reemplazan los grises fríos sueltos que se venían usando
+     a mano (habia 10 pasos distintos de gray-* elegidos caso por caso). */
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --surface-2: #f5f2ee;
+  --border: #e8e4de;
+  --border-strong: #d6d0c7;
+  --muted: #6f6862;
+  --text: #2a2623;
+
+  /* Acento único. Verde grounded: el rubro espera verde o azul, no violeta, y
+     los azules fríos leen clínico en salud mental. */
+  --primary: #1a6b54;
+  --primary-hi: #14563f;
+  --primary-soft: #e6f2ed;
+
+  /* Semánticos. Confirmado reutiliza --primary a propósito: confirmar ES el
+     estado de éxito del producto. El error es ladrillo apagado, porque un rojo
+     saturado lee como emergencia médica. */
+  --pending: #a66a00;
+  --pending-soft: #fbf1de;
+  --error: #a6362c;
+  --error-soft: #f9ebe8;
+  --info: #2f5c7a;
+
+  /* Compatibilidad con el scaffold original. */
+  --background: var(--bg);
+  --foreground: var(--text);
+}
+
+/* Oscuro: superficies marrón muy oscuro en vez de gris azulado, texto blanco
+   roto en vez de blanco puro, y verde desaturado para que no vibre. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1816;
+    --surface: #221f1c;
+    --surface-2: #2a2622;
+    --border: #332f2a;
+    --border-strong: #443f38;
+    --muted: #a39a90;
+    --text: #ede8e1;
+    --primary: #5faf92;
+    --primary-hi: #7cc4a9;
+    --primary-soft: #1e332c;
+    --pending: #d9a24b;
+    --pending-soft: #33291a;
+    --error: #d4796d;
+    --error-soft: #33211e;
+    --info: #7fa8c4;
+  }
+}
+
+/* Malbec Motion (landing de la agencia, ruta /). Identidad propia y separada de
+   PsicoLink: editorial en blanco y negro, tipografía grotesca enorme y el rojo
+   malbec como único acento (inclinado al rojo, nunca violeta: ver DESIGN.md).
+   Encapsulado en .theme-malbec para que no toque ninguna pantalla de PsicoLink. */
+.theme-malbec {
+  --mm-bg: #ffffff;
+  --mm-surface: #f3f4f5;
+  --mm-surface-2: #e9eaeb;
+  --mm-line: #d4d6d8;
+  --mm-text: #0b0b0b;
+  --mm-muted: #5e6062;
+  --mm-ink: #000000;
+  --mm-accent: #8c1c3a;
+  --mm-accent-hi: #a3243f;
+  --mm-accent-text: #8c1c3a;
+}
+
+/* Texto que pasa en loop (CONTACTO, el nombre en el pie). Va en una capa para
+   no pisar utilidades de Tailwind. Quieto para quien pide menos movimiento. */
+@layer components {
+  .mm-marquee {
+    display: flex;
+    width: max-content;
+    animation: mm-marquee 28s linear infinite;
+  }
+  .mm-marquee-rev {
+    animation-direction: reverse;
+  }
+
+  /* Aparición al hacer scroll. Solo se esconde con .mm-motion, que pone
+     MotionRoot: sin JS o con movimiento reducido el contenido se ve igual. */
+  .mm-motion [data-reveal] {
+    opacity: 0;
+    translate: 0 48px;
+    transition:
+      opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+      translate 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i, 0) * 90ms);
+  }
+  .mm-motion [data-reveal].is-in {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  /* Parallax: MotionRoot escribe --py en cada elemento con data-speed. */
+  .mm-parallax {
+    transform: translate3d(0, var(--py, 0px), 0);
+    will-change: transform;
+  }
+  /* El mismo --py, pero de costado: la frase gigante se corre con el scroll. */
+  .mm-drift {
+    transform: translate3d(var(--py, 0px), 0, 0);
+    will-change: transform;
+  }
+
+  /* Galería flotante: cada tarjeta sube y baja a su ritmo, y se inclina
+     siguiendo el mouse según su profundidad (--depth). */
+  .mm-float {
+    animation: mm-float var(--dur, 7s) ease-in-out var(--delay, 0s) infinite alternate;
+  }
+  .mm-tilt {
+    transform: perspective(1200px) rotateX(calc(var(--my, 0) * -5deg * var(--depth, 1)))
+      rotateY(calc(var(--mx, 0) * 7deg * var(--depth, 1)))
+      translate3d(calc(var(--mx, 0) * 14px * var(--depth, 1)), calc(var(--my, 0) * 10px * var(--depth, 1)), 0);
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* Portada: zoom lento del video y título que entra palabra por palabra. */
+  .mm-kenburns {
+    animation: mm-kenburns 22s ease-in-out infinite alternate;
+  }
+  .mm-word {
+    display: inline-block;
+    animation: mm-rise 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(0.15s + var(--i, 0) * 110ms);
+  }
+  .mm-fade-up {
+    animation: mm-rise 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(0.6s + var(--i, 0) * 90ms);
+  }
+
+  .mm-spin {
+    animation: mm-spin 24s linear infinite;
+  }
+  .mm-pulse {
+    animation: mm-pulse 2.4s ease-out infinite;
+  }
+  .mm-bob {
+    animation: mm-bob 1.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mm-marquee,
+    .mm-float,
+    .mm-kenburns,
+    .mm-word,
+    .mm-fade-up,
+    .mm-spin,
+    .mm-pulse,
+    .mm-bob {
+      animation: none;
+    }
+    .mm-tilt,
+    .mm-parallax,
+    .mm-drift {
+      transform: none;
+    }
+  }
+}
+
+@keyframes mm-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes mm-float {
+  from {
+    translate: 0 -14px;
+    rotate: calc(var(--rot, 0deg) * -1);
+  }
+  to {
+    translate: 0 14px;
+    rotate: var(--rot, 0deg);
+  }
+}
+@keyframes mm-kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.14) translate(-1.5%, -1%);
+  }
+}
+@keyframes mm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes mm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes mm-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(37 211 102 / 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgb(37 211 102 / 0);
+  }
+}
+@keyframes mm-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
 }
 
 @theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-muted: var(--muted);
+  --color-ink: var(--text);
+  --color-primary: var(--primary);
+  --color-primary-hi: var(--primary-hi);
+  --color-primary-soft: var(--primary-soft);
+  --color-pending: var(--pending);
+  --color-pending-soft: var(--pending-soft);
+  --color-danger: var(--error);
+  --color-danger-soft: var(--error-soft);
+  --color-info: var(--info);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-mm-bg: var(--mm-bg);
+  --color-mm-surface: var(--mm-surface);
+  --color-mm-surface-2: var(--mm-surface-2);
+  --color-mm-line: var(--mm-line);
+  --color-mm-text: var(--mm-text);
+  --color-mm-muted: var(--mm-muted);
+  --color-mm-accent: var(--mm-accent);
+  --color-mm-accent-hi: var(--mm-accent-hi);
+  --color-mm-accent-text: var(--mm-accent-text);
+  --color-mm-ink: var(--mm-ink);
+
+  /* layout.tsx carga las fuentes y expone estas variables. El scaffold apuntaba
+     --font-sans a --font-geist-sans, una variable que nadie definía. */
+  --font-sans: var(--font-geist);
+  --font-display: var(--font-fraunces);
 }
 
-
+/* Sin font-family acá a propósito. Las utilidades de Tailwind viven en
+   @layer utilities y el CSS sin capa les gana sin importar la especificidad, así
+   que una regla de fuente en body pisa en silencio la clase que pone layout.tsx
+   y la app entera renderiza en la fuente del body mientras igual descarga el
+   webfont. Ya pasó una vez con Arial. */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }

@@ -1,0 +1,19 @@
+# Servicio systemd para la app Next.js.
+# Instalar en /etc/systemd/system/psicolink.service y ajustar User y rutas.
+[Unit]
+Description=PsicoLink (Next.js) en malbecmotion.com
+After=network.target
+
+[Service]
+Type=simple
+User=TU_USUARIO
+WorkingDirectory=/var/www/psicolink
+EnvironmentFile=/var/www/psicolink/.env.production
+Environment=NODE_ENV=production
+# -H 127.0.0.1: solo escucha en localhost, el tráfico de afuera entra por Caddy.
+ExecStart=/usr/bin/npx next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

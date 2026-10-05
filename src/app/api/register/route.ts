@@ -25,7 +25,9 @@ export async function POST(req: NextRequest) {
   const hashed = await bcrypt.hash(password, 12);
 
   const user = await prisma.user.create({
-    data: { name, email, password: hashed, role: role ?? "PATIENT" },
+    // roleChosen: acá el rol viene del formulario, así que no hay nada que
+    // preguntar después. Quien entra por Google llega sin elegir.
+    data: { name, email, password: hashed, role: role ?? "PATIENT", roleChosen: true },
   });
 
   return NextResponse.json(

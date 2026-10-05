@@ -1,0 +1,13 @@
+# Cloudflare Tunnel para malbecmotion.com (servidor sin IP pública / detrás de NAT).
+# Copiar a /etc/cloudflared/config.yml y reemplazar TUNNEL_ID por el que
+# devuelve `cloudflared tunnel create psicolink`.
+tunnel: TUNNEL_ID
+credentials-file: /etc/cloudflared/TUNNEL_ID.json
+
+ingress:
+  - hostname: malbecmotion.com
+    service: http://127.0.0.1:3000
+  - hostname: www.malbecmotion.com
+    service: http://127.0.0.1:3000
+  # Cualquier otro hostname: 404.
+  - service: http_status:404

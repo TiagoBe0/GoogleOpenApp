@@ -31,10 +31,10 @@ export default async function CalendarioPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Calendario</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="font-display text-3xl font-semibold text-ink">Calendario</h1>
+          <p className="text-sm text-muted mt-1">
             Turnos y eventos de la semana
           </p>
         </div>
@@ -47,7 +47,7 @@ export default async function CalendarioPage() {
           >
             <button
               type="submit"
-              className="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+              className="min-h-11 w-full rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hi transition-colors flex items-center justify-center gap-2 sm:w-auto"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -63,14 +63,14 @@ export default async function CalendarioPage() {
 
       {/* This week summary */}
       {upcomingThisWeek.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">Esta semana</p>
-            <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full">
+        <div className="bg-surface rounded-lg border border-line overflow-hidden">
+          <div className="px-5 py-3 border-b border-line bg-surface-2 flex items-center justify-between">
+            <p className="text-sm font-semibold text-ink">Esta semana</p>
+            <span className="text-xs bg-primary-soft text-primary font-semibold px-2 py-0.5 rounded-full">
               {upcomingThisWeek.length} turno{upcomingThisWeek.length !== 1 ? "s" : ""}
             </span>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-line">
             {upcomingThisWeek.map((apt) => {
               const d = new Date(apt.date);
               const name =
@@ -78,18 +78,18 @@ export default async function CalendarioPage() {
               const isConfirmed = apt.status === "CONFIRMED";
               return (
                 <div key={apt.id} className="px-5 py-3 flex items-center gap-3">
-                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isConfirmed ? "bg-emerald-500" : "bg-amber-500"}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isConfirmed ? "bg-primary" : "bg-pending"}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-                    <p className="text-xs text-gray-400 capitalize">
+                    <p className="text-sm font-semibold text-ink truncate">{name}</p>
+                    <p className="text-xs text-muted capitalize">
                       {fmt(d)} · {fmtTime(d)} · {apt.duration} min
                     </p>
                   </div>
                   <span
                     className={`text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
                       isConfirmed
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
+                        ? "bg-primary-soft text-primary"
+                        : "bg-pending-soft text-pending"
                     }`}
                   >
                     {isConfirmed ? "Confirmado" : "Pendiente"}

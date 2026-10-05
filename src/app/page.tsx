@@ -5,6 +5,7 @@ import { Inter_Tight } from "next/font/google";
 import ContactForm from "@/components/landing/ContactForm";
 import InViewVideo from "@/components/landing/InViewVideo";
 import Logo from "@/components/landing/Logo";
+import MotionRoot from "@/components/landing/MotionRoot";
 import { WHATSAPP_DISPLAY, whatsappLink } from "@/lib/contact";
 
 // Grotesca apretada para los títulos enormes en mayúsculas. Solo la carga esta
@@ -73,6 +74,20 @@ const PORTFOLIO = [
   { file: "retrato_neonoir", title: "Neo-noir", kind: "Retrato" },
   { file: "hombre_playa", title: "Costa", kind: "Lifestyle" },
   { file: "cabana_simetrica", title: "Refugio", kind: "Hospedaje" },
+];
+/**
+ * Composición de la galería flotante en escritorio: cada pieza toma el lugar de
+ * su índice. `speed` es el parallax (negativo sube al bajar), `depth` cuánto se
+ * inclina con el mouse, `dur`/`rot` el ritmo y el giro con que flota. En el
+ * celular queda en una columna y conserva la flotación.
+ */
+const FLOAT_LAYOUT = [
+  { cls: "lg:col-span-7", aspect: "aspect-video", speed: -0.05, depth: 0.6, dur: 7, rot: 0.6 },
+  { cls: "lg:col-span-5 lg:mt-36", aspect: "aspect-[4/5]", speed: 0.1, depth: 1.2, dur: 8.5, rot: -0.9 },
+  { cls: "lg:col-span-4 lg:-mt-52", aspect: "aspect-square", speed: 0.14, depth: 1.4, dur: 6.2, rot: 1.1 },
+  { cls: "lg:col-span-5 lg:mt-16", aspect: "aspect-video", speed: -0.03, depth: 0.8, dur: 9, rot: -0.5 },
+  { cls: "lg:col-span-3 lg:mt-48", aspect: "aspect-[3/4]", speed: 0.12, depth: 1.3, dur: 7.6, rot: 0.8 },
+  { cls: "lg:col-span-6 lg:col-start-4 lg:-mt-6", aspect: "aspect-video", speed: -0.07, depth: 0.9, dur: 8, rot: -0.7 },
 ];
 const REEL = "/reel/reel.mp4";
 const REEL_POSTER = "/reel/reel.jpg";
@@ -160,9 +175,11 @@ function Badge() {
         <path id="mm-ring" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0" />
       </defs>
       <circle cx="100" cy="100" r="98" fill="#0b0b0b" />
-      <text fill="#fff" fontSize="15" fontWeight="600" letterSpacing="3.4">
-        <textPath href="#mm-ring">HECHO EN MENDOZA · VIDEO CON IA · </textPath>
-      </text>
+      <g className="mm-spin" style={{ transformOrigin: "100px 100px" }}>
+        <text fill="#fff" fontSize="15" fontWeight="600" letterSpacing="3.4">
+          <textPath href="#mm-ring">HECHO EN MENDOZA · VIDEO CON IA · </textPath>
+        </text>
+      </g>
       <circle cx="100" cy="100" r="50" fill="#8c1c3a" />
       <svg x="76" y="62" width="48" height="76" viewBox="60 10 80 182" className="text-white">
         <mask id="mm-badge-bite">
@@ -205,6 +222,7 @@ export default function Landing() {
     <div
       className={`theme-malbec ${grotesk.variable} min-h-screen bg-mm-bg font-[family-name:var(--font-mm)] text-mm-text`}
     >
+      <MotionRoot />
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-mm-accent focus:px-5 focus:py-3 focus:text-white"
@@ -216,7 +234,7 @@ export default function Landing() {
       <header className="relative flex min-h-[100svh] flex-col overflow-hidden bg-black text-white">
         {hasVideo ? (
           <video
-            className="absolute inset-0 h-full w-full object-cover"
+            className="mm-kenburns absolute inset-0 h-full w-full object-cover"
             src={HERO_VIDEO}
             poster={hasPoster ? HERO_POSTER : undefined}
             autoPlay
@@ -246,18 +264,29 @@ export default function Landing() {
 
         <div className={`${wrap} relative z-10 flex flex-1 flex-col justify-center py-16`}>
           <h1 className="max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.035em] sm:text-7xl lg:text-8xl">
-            Video publicitario con IA
+            {"Video publicitario con IA".split(" ").map((w, i) => (
+              <span key={i} className="mm-word" style={{ "--i": i } as React.CSSProperties}>
+                {w}
+                {"\u00a0"}
+              </span>
+            ))}
           </h1>
-          <p className="mt-5 max-w-2xl text-xl leading-snug text-white/90 sm:text-2xl">
+          <p className="mm-fade-up mt-5 max-w-2xl text-xl leading-snug text-white/90 sm:text-2xl">
             Para bodegas, turismo y gastronomía de Mendoza. En tres idiomas y en días.
           </p>
         </div>
 
         <div className={`${wrap} relative z-10 pb-24 sm:pb-10`}>
-          <p className={`${label} text-white/80`}>Qué hacemos ↘</p>
+          <p className={`${label} mm-fade-up text-white/80`} style={{ "--i": 2 } as React.CSSProperties}>
+            Qué hacemos <span className="mm-bob inline-block">↘</span>
+          </p>
           <ul className="mt-3 w-56">
             {WHAT.map((w, i) => (
-              <li key={w} className={`${label} flex justify-between border-b border-white/40 py-2 text-white`}>
+              <li
+                key={w}
+                className={`${label} mm-fade-up flex justify-between border-b border-white/40 py-2 text-white`}
+                style={{ "--i": i + 3 } as React.CSSProperties}
+              >
                 <span>{w}</span>
                 <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span>
               </li>
@@ -270,7 +299,7 @@ export default function Landing() {
         {/* Somos */}
         <section id="somos" className={`${wrap} scroll-mt-4 py-24 sm:py-32`}>
           <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
+            <div data-reveal className="max-w-3xl">
               <h2 className={`${giant} text-4xl sm:text-6xl`}>
                 Somos una agencia de video con IA, hecha en Mendoza.
               </h2>
@@ -280,7 +309,11 @@ export default function Landing() {
                 producción tradicional, sin perder lo auténtico de tu marca.
               </p>
             </div>
-            <Badge />
+            <div data-reveal style={{ "--i": 2 } as React.CSSProperties}>
+              <div data-speed="-0.08" className="mm-parallax">
+                <Badge />
+              </div>
+            </div>
           </div>
 
           <dl className="mt-20 grid gap-10 border-t border-mm-line pt-10 sm:grid-cols-3">
@@ -288,8 +321,8 @@ export default function Landing() {
               { k: "1,59 M", v: "visitantes recibieron las bodegas de Mendoza en 2024" },
               { k: "43 %", v: "de esos visitantes llegó desde el exterior" },
               { k: "45 %", v: "de los extranjeros vino de Brasil: tu próximo cliente habla portugués" },
-            ].map((s) => (
-              <div key={s.k}>
+            ].map((s, i) => (
+              <div key={s.k} data-reveal style={{ "--i": i } as React.CSSProperties}>
                 <dt className="text-5xl font-semibold tabular-nums tracking-[-0.04em]">{s.k}</dt>
                 <dd className="mt-2 text-base leading-relaxed text-mm-muted">{s.v}</dd>
               </div>
@@ -311,54 +344,87 @@ export default function Landing() {
 
         {/* Portfolio */}
         {pieces.length > 0 && (
-          <section id="portfolio" className={`${wrap} scroll-mt-4 pb-24 sm:pb-32`}>
-            <h2 className="text-center text-xl font-semibold uppercase tracking-[-0.01em]">Nuestro portfolio</h2>
-            <p className="mx-auto mt-3 max-w-lg text-center text-base text-mm-muted">
-              Cada pieza fue generada con IA en nuestros propios equipos.
-            </p>
-            <ul className="mt-10 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-              {pieces.map((p) => (
-                <li key={p.file} className="group relative aspect-video overflow-hidden rounded-[3px] bg-black">
-                  <InViewVideo
-                    src={`/reel/${p.file}.mp4`}
-                    poster={`/reel/${p.file}.jpg`}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                  />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-12 text-white">
-                    <p className="text-xl font-semibold leading-none tracking-[-0.02em]">{p.title}</p>
-                    <p className={`${label} mt-1.5 text-white/75`}>{p.kind}</p>
-                  </div>
-                </li>
-              ))}
+          <section id="portfolio" className="scroll-mt-4 overflow-hidden pb-24 sm:pb-40">
+            <div data-reveal className={wrap}>
+              <h2 className={`${giant} text-5xl sm:text-7xl`}>Portfolio</h2>
+              <p className="mt-4 max-w-lg text-base text-mm-muted">
+                Cada pieza fue generada con IA en nuestros propios equipos.
+              </p>
+            </div>
+            <ul className={`${wrap} mt-12 grid gap-10 sm:grid-cols-2 sm:gap-8 lg:mt-20 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-6`}>
+              {pieces.map((p, i) => {
+                const l = FLOAT_LAYOUT[i % FLOAT_LAYOUT.length];
+                return (
+                  <li key={p.file} className={l.cls} data-reveal style={{ "--i": i % 3 } as React.CSSProperties}>
+                    <div data-speed={l.speed} className="mm-parallax">
+                      <div
+                        className="mm-float"
+                        style={
+                          { "--dur": `${l.dur}s`, "--delay": `${-i * 1.3}s`, "--rot": `${l.rot}deg` } as React.CSSProperties
+                        }
+                      >
+                        <div
+                          className={`mm-tilt group relative ${l.aspect} overflow-hidden rounded-[6px] bg-black shadow-[0_30px_60px_-20px_rgb(0_0_0/0.45)]`}
+                          style={{ "--depth": l.depth } as React.CSSProperties}
+                        >
+                          <InViewVideo
+                            src={`/reel/${p.file}.mp4`}
+                            poster={`/reel/${p.file}.jpg`}
+                            className="h-full w-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.08]"
+                          />
+                          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-4 pt-14 text-white sm:p-5">
+                            <p className={`${label} text-white/70`}>
+                              {String(i + 1).padStart(2, "0")} · {p.kind}
+                            </p>
+                            <p className="mt-1.5 text-2xl font-semibold leading-none tracking-[-0.02em] transition-transform duration-500 group-hover:-translate-y-1">
+                              {p.title}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}
 
         {/* Rubros */}
-        <section className={`${wrap} pb-24 sm:pb-32`}>
-          <h2 className="text-center text-xl font-semibold uppercase tracking-[-0.01em]">Para quién trabajamos</h2>
-          <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-            {SECTORS.map((s) => (
-              <li
-                key={s.name}
-                className={`relative flex aspect-[4/3] flex-col justify-end rounded-[3px] p-5 sm:p-7 ${s.bg} ${s.fg}`}
-              >
-                <span aria-hidden="true" className="absolute right-4 top-4 grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm">
-                  ↗
-                </span>
-                <span className="text-2xl font-semibold leading-none tracking-[-0.03em] sm:text-4xl">{s.name}</span>
-                <span className={`${label} mt-2 opacity-80`}>{s.tag}</span>
-              </li>
-            ))}
-          </ul>
+        <section className="pb-24 sm:pb-32">
+          <Marquee
+            word={SECTORS.map((s) => s.name).join(" · ") + " ·"}
+            className="mm-marquee-rev whitespace-nowrap border-y border-mm-line py-4 text-2xl font-semibold uppercase tracking-[-0.02em] text-mm-muted sm:text-4xl"
+          />
+          <div className={wrap}>
+            <h2 data-reveal className="mt-20 text-center text-xl font-semibold uppercase tracking-[-0.01em]">
+              Para quién trabajamos
+            </h2>
+            <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+              {SECTORS.map((s, i) => (
+                <li
+                  key={s.name}
+                  data-reveal
+                  style={{ "--i": i % 3 } as React.CSSProperties}
+                  className={`group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-[3px] p-5 transition-transform duration-500 ease-out hover:-translate-y-2 hover:-rotate-1 sm:p-7 ${s.bg} ${s.fg}`}
+                >
+                  <span aria-hidden="true" className="absolute right-4 top-4 grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm transition-transform duration-500 group-hover:rotate-45 group-hover:scale-125">
+                    ↗
+                  </span>
+                  <span className="text-2xl font-semibold leading-none tracking-[-0.03em] sm:text-4xl">{s.name}</span>
+                  <span className={`${label} mt-2 opacity-80`}>{s.tag}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
 
         {/* Frase gigante */}
-        <section aria-label="Lo que hacemos" className={`${wrap} pb-24 sm:pb-32`}>
+        <section aria-label="Lo que hacemos" className={`${wrap} overflow-hidden pb-24 sm:pb-32`}>
           <p className={`${giant} text-[13vw] lg:text-[10vw]`}>
-            <span className="block">Video con IA</span>
-            <span className="block pl-[6vw]">en tres</span>
-            <span className="block pl-[22vw]">idiomas</span>
+            <span data-speed="0.25" className="mm-drift block">Video con IA</span>
+            <span data-speed="-0.2" className="mm-drift block pl-[6vw]">en tres</span>
+            <span data-speed="0.3" className="mm-drift block pl-[22vw] text-mm-accent">idiomas</span>
           </p>
         </section>
 
@@ -366,7 +432,7 @@ export default function Landing() {
         <section id="servicios" className="grid scroll-mt-4 bg-mm-ink text-white lg:grid-cols-2">
           <div className="relative min-h-[50vh] overflow-hidden">
             {hasReel ? (
-              <div className="flex h-full flex-col justify-center gap-4 px-6 py-12 sm:px-10">
+              <div data-reveal className="flex h-full flex-col justify-center gap-4 px-6 py-12 sm:px-10">
                 <p className={`${label} text-white/70`}>Reel 2026 · 60 segundos</p>
                 <video
                   src={REEL}
@@ -398,16 +464,21 @@ export default function Landing() {
           <div className="px-6 py-16 sm:px-12 sm:py-20">
             <p className={`${label} border-b border-white/30 pb-3 text-white/70`}>Nuestros servicios</p>
             <ul className="mt-8">
-              {SERVICES.map((s) => (
-                <li key={s} className={`${giant} text-5xl sm:text-6xl`}>
+              {SERVICES.map((s, i) => (
+                <li
+                  key={s}
+                  data-reveal
+                  style={{ "--i": i } as React.CSSProperties}
+                  className={`${giant} text-5xl transition-[color,padding] duration-300 hover:pl-4 hover:text-white/60 sm:text-6xl`}
+                >
                   {s}
                   <sup className="ml-1 text-xl">°</sup>
                 </li>
               ))}
             </ul>
             <ol className="mt-14 grid gap-8 sm:grid-cols-2">
-              {STEPS.map((s) => (
-                <li key={s.n} className="border-t border-white/25 pt-4">
+              {STEPS.map((s, i) => (
+                <li key={s.n} data-reveal style={{ "--i": i } as React.CSSProperties} className="border-t border-white/25 pt-4">
                   <p className="text-sm tabular-nums text-white/60">{s.n}</p>
                   <h3 className="mt-1 text-lg font-semibold uppercase tracking-[-0.01em]">{s.title}</h3>
                   <p className="mt-1 text-base leading-relaxed text-white/75">{s.body}</p>
@@ -420,16 +491,18 @@ export default function Landing() {
         {/* Precios */}
         <section id="precios" className={`${wrap} scroll-mt-4 py-24 sm:py-32`}>
           <div className="flex flex-col justify-between gap-6 border-b border-mm-line pb-8 sm:flex-row sm:items-end">
-            <h2 className={`${giant} text-5xl sm:text-7xl`}>Precios</h2>
+            <h2 data-reveal className={`${giant} text-5xl sm:text-7xl`}>Precios</h2>
             <p className="max-w-sm text-base text-mm-muted">
               Precios de lanzamiento, sin &ldquo;pedí presupuesto&rdquo;. Se pueden pagar en pesos al cambio del día.
             </p>
           </div>
           <div className="mt-10 grid gap-4 lg:grid-cols-3">
-            {PLANS.map((p) => (
+            {PLANS.map((p, i) => (
               <div
                 key={p.name}
-                className={`flex flex-col rounded-[3px] p-8 ${p.featured ? "bg-mm-ink text-white" : "bg-mm-surface text-mm-text"}`}
+                data-reveal
+                style={{ "--i": i } as React.CSSProperties}
+                className={`flex flex-col rounded-[3px] p-8 transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-2 hover:shadow-[0_30px_60px_-25px_rgb(0_0_0/0.4)] ${p.featured ? "bg-mm-ink text-white" : "bg-mm-surface text-mm-text"}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-xl font-semibold uppercase tracking-[-0.01em]">{p.name}</h3>
@@ -464,8 +537,8 @@ export default function Landing() {
         {/* Preguntas */}
         <section id="preguntas" className={`${wrap} pb-24 sm:pb-32`}>
           <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr]">
-            <h2 className={`${giant} text-4xl sm:text-6xl`}>Preguntas</h2>
-            <div className="border-t border-mm-text">
+            <h2 data-reveal className={`${giant} text-4xl sm:text-6xl`}>Preguntas</h2>
+            <div data-reveal className="border-t border-mm-text">
               {FAQ.map((f) => (
                 <details key={f.q} className="group border-b border-mm-line">
                   <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-lg font-semibold [&::-webkit-details-marker]:hidden">
@@ -485,7 +558,7 @@ export default function Landing() {
         <section id="contacto" className="scroll-mt-4 pb-24 sm:pb-32">
           <h2 className="sr-only">Contacto</h2>
           <Marquee word="Contacto" className={`${giant} text-[18vw] lg:text-[11vw]`} />
-          <div className={`${wrap} mt-10 grid gap-12 border-t border-mm-text/40 pt-12 lg:grid-cols-[1fr_1.4fr]`}>
+          <div data-reveal className={`${wrap} mt-10 grid gap-12 border-t border-mm-text/40 pt-12 lg:grid-cols-[1fr_1.4fr]`}>
             <div>
               <p className="max-w-xs text-lg leading-snug">
                 Contanos qué querés mostrar y te respondemos con una propuesta concreta: qué video, en qué idiomas,
@@ -540,7 +613,7 @@ export default function Landing() {
         className="fixed bottom-5 right-5 z-40 flex min-h-12 items-center gap-2 rounded-full border border-[#1faa52] bg-white pl-5 pr-1.5 text-sm font-semibold text-[#0b0b0b] shadow-lg shadow-black/20 transition-colors hover:bg-[#effaf2]"
       >
         Agendar por WhatsApp
-        <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-full bg-[#25d366] text-white">
+        <span aria-hidden="true" className="mm-pulse grid h-9 w-9 place-items-center rounded-full bg-[#25d366] text-white">
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
             <path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.79-1.47-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.21 3.07.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35zM12.05 21.5h-.01a9.4 9.4 0 0 1-4.79-1.31l-.34-.2-3.56.93.95-3.47-.22-.36A9.4 9.4 0 0 1 2.6 12.05c0-5.2 4.24-9.44 9.46-9.44 2.52 0 4.9.99 6.68 2.77a9.38 9.38 0 0 1 2.76 6.68c0 5.21-4.24 9.44-9.45 9.44zm8.05-17.5A11.32 11.32 0 0 0 12.05.67C5.78.67.67 5.77.67 12.05c0 2 .52 3.96 1.52 5.69L.57 23.33l5.72-1.5a11.36 11.36 0 0 0 5.75 1.47h.01c6.27 0 11.38-5.1 11.38-11.38 0-3.04-1.18-5.9-3.33-8.05z" />
           </svg>
